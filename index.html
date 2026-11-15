@@ -86,6 +86,12 @@
     .global-card small { font-size: 10px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px; }
     .global-card div { font-size: 17px; font-weight: 800; color: var(--primary); }
 
+    .chart-full-width { grid-column: 1 / -1; }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px; }
+    .chart-header .stat-label { margin-bottom: 0; }
+    .chart-badge { font-size: 11px; font-weight: 700; color: #1967d2; background: #e8f0fe; padding: 3px 10px; border-radius: 5px; }
+    .chart-container { position: relative; height: 210px; width: 100%; }
+
     #controls { background: white; padding: 10px 20px; display: flex; gap: 12px; border-bottom: 1px solid #dee2e6; flex-wrap: wrap; align-items: flex-end; justify-content: flex-start; position: sticky; top: 55px; z-index: 2500; }
     .input-group { display: flex; flex-direction: column; gap: 4px; }
     label { font-size: 9px; font-weight: 800; color: #777; text-transform: uppercase; }
@@ -306,6 +312,17 @@
       </table>
     </div>
   </div>
+
+  <!-- KAD 7: CARTA PERATUS KOORDINAT MENGIKUT NEGERI -->
+  <div class="table-wrapper chart-full-width">
+    <div class="chart-header">
+      <span class="stat-label">Peratus Penternak Mempunyai Koordinat Mengikut Negeri</span>
+      <span id="coord-overall-badge" class="chart-badge">Keseluruhan: 0% (0 / 0)</span>
+    </div>
+    <div class="chart-container">
+      <canvas id="coordChart"></canvas>
+    </div>
+  </div>
 </div>
 
 <div id="controls">
@@ -363,6 +380,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
   // --- URL GOOGLE APPS SCRIPT WEB APP ---
@@ -387,7 +405,7 @@
   const stateColors = { 'Selangor': '#ff0000', 'Johor': '#000066', 'Kedah': '#ff0000', 'Kelantan': '#ff0000', 'Melaka': '#ff0000', 'Negeri Sembilan': '#ffff00', 'Pahang': '#000000', 'Perak': '#ffcc00', 'Perlis': '#ffff00', 'Pulau Pinang': '#0099ff', 'Sabah': '#66ccff', 'Sarawak': '#ff0000', 'Terengganu': '#000000', 'Kuala Lumpur': '#0000ff', 'Putrajaya': '#ffcc00', 'Labuan': '#ff0000' };
 
   const MY_CENTER = [4.2105, 101.9758], MY_ZOOM = 6;
-  var map, clusterGroup, singleGroup, boundaryLayer, pulseMarker;
+  var map, clusterGroup, singleGroup, boundaryLayer, pulseMarker, coordChartInstance = null;
   var rawData = [], headers = [], checkedSpecies = [], geojsonData = null;
   var currentUserScope = "PUBLIC";
   var currentAkuaStats = {}, currentNegeriStats = {}, currentDaerahStats = {}, currentParlimenStats = {}, currentSistemStats = {};
@@ -591,25 +609,39 @@
     const fN = document.getElementById('filterNegeri').value.trim(), fD = document.getElementById('filterDaerah').value.trim(), fA = document.getElementById('filterAkua').value.trim(), fS = document.getElementById('filterSistem').value.trim(), fNameRaw = document.getElementById('filterNama').value.trim().toLowerCase(), useCluster = document.getElementById('toggleCluster').checked;
     let markers = [], bounds = [], totalLuas = 0, totalUnit = 0, akuaStats = {}, negeriStats = {}, daerahStats = {}, parlimenStats = {}, sistemStats = {}, exactMatchRow = null;
     let uAkuas = new Set(), uSistems = new Set();
+    let coordCoverage = {}, totalRecordsFiltered = 0, totalValidFiltered = 0;
     
     const len = rawData.length;
     for (let i = 0; i < len; i++) {
-      const r = rawData[i], lat = fixCoord(r[COL.LAT]), lng = fixCoord(r[COL.LNG]);
-      if (lat === null || lng === null || !isWithinMalaysia(lat, lng)) continue;
-      
+      const r = rawData[i];
       const negeri = String(r[COL.NEGERI] || "").trim();
       const daerah = String(r[COL.DAERAH] || "").trim();
       const parlimen = String(r[COL.PARLIMEN] || "").trim();
       const akua = String(r[COL.AKUA] || "").trim();
       const sistem = String(r[COL.SISTEM] || "").trim();
       const namaFull = String(r[COL.NAMA] || "").trim();
-      const luas = parseFloat(String(r[COL.LUAS] || "0").replace(/,/g, '')) || 0;
-      const unit = parseFloat(String(r[COL.UNIT] || "0").replace(/,/g, '')) || 0;
-      
       const matchSpesies = checkedSpecies.length === 0 || checkedSpecies.some(s => String(r[COL.SPESIES]).includes(s));
-      
+
       if ((fN === "" || negeri === fN) && (fD === "" || daerah === fD) && (fA === "" || akua === fA) && (fS === "" || sistem === fS) && matchSpesies) {
         if (fNameRaw === "" || namaFull.toLowerCase().includes(fNameRaw)) {
+          const lat = fixCoord(r[COL.LAT]), lng = fixCoord(r[COL.LNG]);
+          const hasValidCoord = (lat !== null && lng !== null && isWithinMalaysia(lat, lng));
+
+          // Rekod liputan koordinat mengikut negeri (sebelum tapis koordinat kosong)
+          if (negeri !== "") {
+            if (!coordCoverage[negeri]) coordCoverage[negeri] = { total: 0, valid: 0 };
+            coordCoverage[negeri].total++;
+            totalRecordsFiltered++;
+            if (hasValidCoord) {
+              coordCoverage[negeri].valid++;
+              totalValidFiltered++;
+            }
+          }
+
+          if (!hasValidCoord) continue;
+
+          const luas = parseFloat(String(r[COL.LUAS] || "0").replace(/,/g, '')) || 0;
+          const unit = parseFloat(String(r[COL.UNIT] || "0").replace(/,/g, '')) || 0;
           const color = colorMap[akua] || colorMap['Default'];
           const m = L.circleMarker([lat, lng], { radius: 6, fillColor: color, color: "#fff", weight: 1, fillOpacity: 0.8 });
           m.on('click', () => showInfo(r, color, lat, lng));
@@ -642,12 +674,95 @@
 
     currentAkuaStats = akuaStats; currentNegeriStats = negeriStats; currentDaerahStats = daerahStats; currentParlimenStats = parlimenStats; currentSistemStats = sistemStats;
     renderAllTables();
+    renderCoordChart(coordCoverage, totalValidFiltered, totalRecordsFiltered);
     
     if (exactMatchRow) { showInfo(exactMatchRow.row, exactMatchRow.color, exactMatchRow.lat, exactMatchRow.lng); map.setView([exactMatchRow.lat, exactMatchRow.lng], 16); } 
     else if (fD !== "" && markers.length > 0) { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 }); }
     else if (fN !== "" && boundaryLayer.getLayers().length > 0) { map.fitBounds(boundaryLayer.getBounds(), { padding: [30, 30] }); } 
     else if (bounds.length > 0) { map.fitBounds(bounds, { padding: [50, 50] }); } 
     else { map.setView(MY_CENTER, MY_ZOOM); }
+  }
+
+  function renderCoordChart(coverage, totalValid, totalAll) {
+    const overallPct = totalAll > 0 ? ((totalValid / totalAll) * 100).toFixed(1) : "0.0";
+    document.getElementById('coord-overall-badge').innerText = 
+      `Keseluruhan: ${overallPct}% (${totalValid.toLocaleString()} / ${totalAll.toLocaleString()} penternak)`;
+
+    if (typeof Chart === 'undefined') return;
+
+    const sortedStates = Object.keys(coverage)
+      .map(n => ({
+        negeri: n,
+        valid: coverage[n].valid,
+        total: coverage[n].total,
+        pct: coverage[n].total > 0 ? (coverage[n].valid / coverage[n].total) * 100 : 0
+      }))
+      .sort((a, b) => b.pct - a.pct || b.total - a.total);
+
+    const labels = sortedStates.map(s => s.negeri);
+    const dataPct = sortedStates.map(s => Number(s.pct.toFixed(1)));
+    const bgColors = sortedStates.map(s => s.pct >= 80 ? '#27ae60' : (s.pct >= 50 ? '#1a73e8' : '#e67e22'));
+
+    const ctx = document.getElementById('coordChart').getContext('2d');
+    if (coordChartInstance) coordChartInstance.destroy();
+
+    const barLabelPlugin = {
+      id: 'barLabelPlugin',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        ctx.save();
+        ctx.font = 'bold 10px Segoe UI, sans-serif';
+        ctx.fillStyle = '#334155';
+        ctx.textAlign = 'center';
+        chart.getDatasetMeta(0).data.forEach((bar, idx) => {
+          ctx.fillText(dataPct[idx] + '%', bar.x, bar.y - 5);
+        });
+        ctx.restore();
+      }
+    };
+
+    coordChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Peratus Ada Koordinat (%)',
+          data: dataPct,
+          backgroundColor: bgColors,
+          borderRadius: 5,
+          maxBarThickness: 38
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { top: 20 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const item = sortedStates[context.dataIndex];
+                return ` ${item.pct.toFixed(1)}% (${item.valid.toLocaleString()} / ${item.total.toLocaleString()} rekod)`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: { callback: val => val + '%', font: { size: 10 } },
+            grid: { color: '#f1f5f9' }
+          },
+          x: {
+            ticks: { font: { size: 10, weight: '600' } },
+            grid: { display: false }
+          }
+        }
+      },
+      plugins: [barLabelPlugin]
+    });
   }
 
   function renderAllTables() { requestAnimationFrame(() => { renderSingleTable(currentAkuaStats, 'akua-table-body', colorMap, sortStates.akua); renderSingleTable(currentNegeriStats, 'negeri-table-body', stateColors, sortStates.negeri); renderSingleTable(currentDaerahStats, 'daerah-table-body', {}, sortStates.daerah); renderSingleTable(currentParlimenStats, 'parlimen-table-body', {}, sortStates.parlimen); renderSingleTable(currentSistemStats, 'sistem-table-body', {}, sortStates.sistem); }); }
