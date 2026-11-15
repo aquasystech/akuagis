@@ -498,6 +498,29 @@
     updateNamaDatalist(); updateUI();
   }
 
+  function updateSistemDropdown() {
+    const fN = document.getElementById('filterNegeri').value;
+    const fD = document.getElementById('filterDaerah').value;
+    const fA = document.getElementById('filterAkua').value;
+    const sSel = document.getElementById('filterSistem');
+    const prevVal = sSel.value;
+
+    sSel.innerHTML = '<option value="">Semua</option>';
+    const sistems = [...new Set(
+      rawData
+        .filter(r =>
+          (fN === "" || String(r[COL.NEGERI] || "").trim() === fN) &&
+          (fD === "" || String(r[COL.DAERAH] || "").trim() === fD) &&
+          (fA === "" || String(r[COL.AKUA] || "").trim() === fA)
+        )
+        .map(r => String(r[COL.SISTEM] || "").trim())
+        .filter(Boolean)
+    )].sort();
+
+    sistems.forEach(s => sSel.add(new Option(s, s)));
+    if (sistems.includes(prevVal)) sSel.value = prevVal;
+  }
+
   function onNegeriChange() {
     const fN = document.getElementById('filterNegeri').value;
     const dSel = document.getElementById('filterDaerah'); dSel.innerHTML = '<option value="">Semua Daerah</option>';
@@ -505,11 +528,11 @@
       const daerahs = [...new Set(rawData.filter(r => String(r[COL.NEGERI]).trim() === fN).map(r => String(r[COL.DAERAH] || "").trim()).filter(Boolean))].sort();
       daerahs.forEach(d => dSel.add(new Option(d, d)));
     }
-    updateBoundary(); updateNamaDatalist(); updateUI();
+    updateSistemDropdown(); updateBoundary(); updateNamaDatalist(); updateUI();
   }
 
-  function onDaerahChange() { updateBoundary(); updateNamaDatalist(); updateUI(); }
-  function onAquaChange() { updateNamaDatalist(); updateUI(); }
+  function onDaerahChange() { updateSistemDropdown(); updateBoundary(); updateNamaDatalist(); updateUI(); }
+  function onAquaChange() { updateSistemDropdown(); updateNamaDatalist(); updateUI(); }
   function onSistemChange() { updateNamaDatalist(); updateUI(); }
 
   function updateBoundary() {
@@ -672,6 +695,7 @@
     if(pulseMarker) pulseMarker.clearLayers();
     document.getElementById('filterNegeri').value = ""; document.getElementById('filterDaerah').innerHTML = '<option value="">Semua Daerah</option>'; 
     document.getElementById('filterAkua').value = ""; document.getElementById('filterSistem').value = ""; document.getElementById('filterNama').value = "";
+    updateSistemDropdown();
     checkedSpecies = []; document.querySelector('.ms-selected').innerText = "Pilih Spesies..."; document.querySelectorAll('.ms-option input').forEach(c => c.checked = false);
     document.getElementById('detail-box').style.display = 'none'; 
     document.getElementById('public-restricted-box').style.display = 'none';
