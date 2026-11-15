@@ -114,13 +114,57 @@
     .restricted-card h4 { color: #d93025; margin: 8px 0; font-size: 14px; }
     .restricted-card p { color: #5f6368; font-size: 12px; line-height: 1.5; margin-bottom: 15px; }
 
-    .map-legend { background: white; padding: 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2); font-size: 11px; line-height: 18px; }
-    .legend-title { font-weight: bold; display: block; margin-bottom: 4px; }
-    .legend-list { display: flex; flex-direction: column; gap: 2px; }
-    .legend-item { display: flex; align-items: center; gap: 8px; }
-    .dot-ref { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    /* GAYA MELINTANG SATU BARIS UNTUK KOMPUTER & TELEFON PINTAR */
+    .leaflet-bottom.leaflet-left {
+      left: 10px;
+      bottom: 10px;
+      max-width: calc(100% - 230px);
+    }
+    .map-legend {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 6px 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      font-size: 11px;
+      line-height: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+      margin: 0 !important;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .map-legend::-webkit-scrollbar { height: 4px; }
+    .map-legend::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .legend-title {
+      font-weight: 800;
+      margin-bottom: 0;
+      padding-right: 10px;
+      border-right: 1px solid #ddd;
+      font-size: 10.5px;
+      color: #444;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .legend-list {
+      display: flex;
+      flex-direction: row;
+      gap: 14px;
+      align-items: center;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10.5px;
+      flex-shrink: 0;
+    }
+    .dot-ref { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 
-    /* GAYA MELINTANG SATU BARIS UNTUK PAPARAN TELEFON PINTAR */
     @media (max-width: 768px) {
       .leaflet-bottom.leaflet-left {
         left: 8px;
@@ -128,40 +172,10 @@
         bottom: 18px;
         max-width: calc(100% - 16px);
       }
-      .map-legend {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 6px 10px;
-        overflow-x: auto;
-        white-space: nowrap;
-        -webkit-overflow-scrolling: touch;
-        touch-action: pan-x;
-        border-radius: 8px;
-        margin: 0 !important;
-        width: 100%;
-        box-sizing: border-box;
-      }
-      .map-legend::-webkit-scrollbar { height: 3px; }
-      .map-legend::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
-      .legend-title {
-        margin-bottom: 0;
-        padding-right: 8px;
-        border-right: 1px solid #ddd;
-        font-size: 10px;
-        color: #555;
-        flex-shrink: 0;
-      }
-      .legend-list {
-        flex-direction: row;
-        gap: 12px;
-        align-items: center;
-      }
-      .legend-item {
-        gap: 5px;
-        font-size: 10px;
-        flex-shrink: 0;
-      }
+      .map-legend { padding: 6px 10px; gap: 10px; }
+      .legend-title { font-size: 10px; padding-right: 8px; }
+      .legend-list { gap: 12px; }
+      .legend-item { gap: 5px; font-size: 10px; }
       .dot-ref { width: 8px; height: 8px; }
     }
 
