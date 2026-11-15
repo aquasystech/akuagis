@@ -39,23 +39,54 @@
 
     #status-bar { background: #e8f0fe; color: #1967d2; padding: 6px 20px; font-size: 11px; border-bottom: 1px solid #d2e3fc; display: flex; justify-content: space-between; align-items: center; }
     .badge-scope { background:#1967d2; color:white; padding:2px 6px; border-radius:3px; font-weight:bold; }
+    .btn-switch-key { background: transparent; border: 1px solid #1967d2; color: #1967d2; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; margin-left: 8px; transition: 0.2s; }
+    .btn-switch-key:hover { background: #1967d2; color: white; }
 
-    #stats-section { background: white; border-bottom: 1px solid #dee2e6; padding: 15px 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 15px; }
-    .table-wrapper { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .scrollable-table { max-height: 180px; overflow-y: auto; }
-    .stat-label { font-size: 11px; font-weight: 800; color: #1405e6; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block; }
-    .sort-hint { font-size: 9px; color: #999; font-weight: normal; text-transform: lowercase; margin-left: 4px; }
+    /* SUSUNAN GRID 3x2 (3 ATAS, 3 BAWAH) */
+    #stats-section { 
+      background: white; 
+      border-bottom: 1px solid #dee2e6; 
+      padding: 12px 20px; 
+      display: grid; 
+      grid-template-columns: repeat(3, 1fr); 
+      gap: 12px; 
+    }
+    .table-wrapper { 
+      background: #fff; 
+      border: 1px solid #e5e7eb; 
+      border-radius: 8px; 
+      padding: 10px 12px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04); 
+      display: flex;
+      flex-direction: column;
+    }
+    .scrollable-table { 
+      max-height: 155px; 
+      overflow-y: auto; 
+      overflow-x: hidden;
+    }
+    .stat-label { 
+      font-size: 11px; 
+      font-weight: 800; 
+      color: #1405e6; 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px; 
+      margin-bottom: 6px; 
+      display: block; 
+      flex-shrink: 0;
+    }
     
-    .summary-table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
-    .summary-table th { text-align: left; padding: 6px; background: #f8f9fa; position: sticky; top: 0; border-bottom: 2px solid #eee; cursor: pointer; }
-    .summary-table td { padding: 6px; border-bottom: 1px solid #f1f1f1; }
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .summary-table th { text-align: left; padding: 6px; background: #f8f9fa; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #eee; cursor: pointer; }
+    .summary-table td { padding: 5px 6px; border-bottom: 1px solid #f1f1f1; }
     .row-indicator { border-left: 4px solid var(--primary); padding-left: 8px !important; }
 
-    .global-stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .global-card { background: #fdfdfd; border: 1px solid #eee; padding: 8px; border-radius: 6px; text-align: center; }
-    .global-card div { font-size: 20px; font-weight: 800; color: var(--primary); }
+    .global-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 2px; }
+    .global-card { background: #f8fafc; border: 1px solid #edf2f7; padding: 8px 6px; border-radius: 6px; text-align: center; }
+    .global-card small { font-size: 10px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px; }
+    .global-card div { font-size: 17px; font-weight: 800; color: var(--primary); }
 
-    #controls { background: white; padding: 12px 20px; display: flex; gap: 12px; border-bottom: 1px solid #dee2e6; flex-wrap: wrap; align-items: flex-end; justify-content: flex-start; position: sticky; top: 55px; z-index: 2500; }
+    #controls { background: white; padding: 10px 20px; display: flex; gap: 12px; border-bottom: 1px solid #dee2e6; flex-wrap: wrap; align-items: flex-end; justify-content: flex-start; position: sticky; top: 55px; z-index: 2500; }
     .input-group { display: flex; flex-direction: column; gap: 4px; }
     label { font-size: 9px; font-weight: 800; color: #777; text-transform: uppercase; }
     
@@ -75,14 +106,26 @@
     #map { flex: 3; height: 100%; width: 100%; z-index: 10; }
     #info-panel { flex: 1; background: white; border-left: 1px solid #dee2e6; overflow-y: auto; padding: 20px; }
     
+    .restricted-card { background: #fff8f6; border: 1px solid #ffd8cc; border-radius: 10px; padding: 20px; text-align: center; margin-top: 20px; }
+    .restricted-card h4 { color: #d93025; margin: 8px 0; font-size: 14px; }
+    .restricted-card p { color: #5f6368; font-size: 12px; line-height: 1.5; margin-bottom: 15px; }
+
     .map-legend { background: white; padding: 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2); font-size: 11px; line-height: 18px; }
     .legend-item { display: flex; align-items: center; gap: 8px; }
     .dot-ref { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 
     footer { background: var(--dark); color: #888; padding: 8px; text-align: center; font-size: 11px; border-top: 1px solid #333; margin-top: auto; }
 
-    @media (max-width: 1100px) { select, input, .ms-container, #filterNama { width: 100% !important; } .input-group { flex: 1 1 150px; } }
-    @media (max-width: 900px) { #main-container { flex-direction: column; height: auto; } #map { height: 400px !important; min-height: 400px; } }
+    @media (max-width: 1100px) { 
+      #stats-section { grid-template-columns: repeat(2, 1fr); }
+      select, input, .ms-container, #filterNama { width: 100% !important; } 
+      .input-group { flex: 1 1 150px; } 
+    }
+    @media (max-width: 750px) { 
+      #stats-section { grid-template-columns: 1fr; }
+      #main-container { flex-direction: column; height: auto; } 
+      #map { height: 400px !important; min-height: 400px; } 
+    }
 
     #loader { position: fixed; inset: 0; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; display: none; }
     .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
@@ -126,59 +169,77 @@
     <strong>LOG MASUK:</strong> <span id="user-email">Menunggu...</span> 
     <span style="margin: 0 10px; color: #ccc;">|</span>
     <strong>AKSES:</strong> <span id="user-scope" class="badge-scope">-</span>
+    <button class="btn-switch-key" onclick="openLoginModal()">Tukar Kod</button>
   </div>
-  <div style="font-size: 9px; color: #70757a;">v2026.02</div>
+  <div style="font-size: 9px; color: #70757a;">v2026.03</div>
 </div>
 
 <div id="stats-section">
+  <!-- KAD 1: RINGKASAN -->
   <div class="table-wrapper">
     <span class="stat-label">Ringkasan</span>
     <div class="global-stats-grid">
       <div class="global-card"><small>Penternak</small><div id="sum-total">0</div></div>
       <div class="global-card"><small>Luas (ha)</small><div id="sum-luas-total">0.00</div></div>
+      <div class="global-card"><small>Bil. Unit</small><div id="sum-unit-total">0</div></div>
       <div class="global-card"><small>Jenis Akua</small><div id="sum-akua-count">0</div></div>
       <div class="global-card"><small>Sistem Ternakan</small><div id="sum-sistem-count">0</div></div>
     </div>
   </div>
 
-  <div class="table-wrapper scrollable-table">
+  <!-- KAD 2: JENIS AKUA -->
+  <div class="table-wrapper">
     <span class="stat-label">Jenis Akua</span>
-    <table class="summary-table" id="tableAkua">
-      <thead><tr><th onclick="resort('akua', 0)">Jenis</th><th onclick="resort('akua', 1)">Bil</th><th style="text-align:right" onclick="resort('akua', 2)">Luas</th></tr></thead>
-      <tbody id="akua-table-body"></tbody>
-    </table>
+    <div class="scrollable-table">
+      <table class="summary-table" id="tableAkua">
+        <thead><tr><th onclick="resort('akua', 0)">Jenis</th><th onclick="resort('akua', 1)">Bil</th><th style="text-align:right" onclick="resort('akua', 2)">Luas</th></tr></thead>
+        <tbody id="akua-table-body"></tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="table-wrapper scrollable-table">
+  <!-- KAD 3: NEGERI -->
+  <div class="table-wrapper">
     <span class="stat-label">Negeri</span>
-    <table class="summary-table" id="tableNegeri">
-      <thead><tr><th onclick="resort('negeri', 0)">Negeri</th><th onclick="resort('negeri', 1)">Bil</th><th style="text-align:right" onclick="resort('negeri', 2)">Luas</th></tr></thead>
-      <tbody id="negeri-table-body"></tbody>
-    </table>
+    <div class="scrollable-table">
+      <table class="summary-table" id="tableNegeri">
+        <thead><tr><th onclick="resort('negeri', 0)">Negeri</th><th onclick="resort('negeri', 1)">Bil</th><th style="text-align:right" onclick="resort('negeri', 2)">Luas</th></tr></thead>
+        <tbody id="negeri-table-body"></tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="table-wrapper scrollable-table">
+  <!-- KAD 4: SISTEM TERNAKAN -->
+  <div class="table-wrapper">
     <span class="stat-label">Sistem Ternakan</span>
-    <table class="summary-table" id="tableSistem">
-      <thead><tr><th onclick="resort('sistem', 0)">Sistem</th><th onclick="resort('sistem', 1)">Bil</th><th style="text-align:right" onclick="resort('sistem', 2)">Luas</th></tr></thead>
-      <tbody id="sistem-table-body"></tbody>
-    </table>
+    <div class="scrollable-table">
+      <table class="summary-table" id="tableSistem">
+        <thead><tr><th onclick="resort('sistem', 0)">Sistem</th><th onclick="resort('sistem', 1)">Bil</th><th style="text-align:right" onclick="resort('sistem', 2)">Luas</th></tr></thead>
+        <tbody id="sistem-table-body"></tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="table-wrapper scrollable-table">
+  <!-- KAD 5: DAERAH -->
+  <div class="table-wrapper">
     <span class="stat-label">Daerah</span>
-    <table class="summary-table" id="tableDaerah">
-      <thead><tr><th onclick="resort('daerah', 0)">Daerah</th><th onclick="resort('daerah', 1)">Bil</th><th style="text-align:right" onclick="resort('daerah', 2)">Luas</th></tr></thead>
-      <tbody id="daerah-table-body"></tbody>
-    </table>
+    <div class="scrollable-table">
+      <table class="summary-table" id="tableDaerah">
+        <thead><tr><th onclick="resort('daerah', 0)">Daerah</th><th onclick="resort('daerah', 1)">Bil</th><th style="text-align:right" onclick="resort('daerah', 2)">Luas</th></tr></thead>
+        <tbody id="daerah-table-body"></tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="table-wrapper scrollable-table">
+  <!-- KAD 6: PARLIMEN -->
+  <div class="table-wrapper">
     <span class="stat-label">Parlimen</span>
-    <table class="summary-table" id="tableParlimen">
-      <thead><tr><th onclick="resort('parlimen', 0)">Parlimen</th><th onclick="resort('parlimen', 1)">Bil</th><th style="text-align:right" onclick="resort('parlimen', 2)">Luas</th></tr></thead>
-      <tbody id="parlimen-table-body"></tbody>
-    </table>
+    <div class="scrollable-table">
+      <table class="summary-table" id="tableParlimen">
+        <thead><tr><th onclick="resort('parlimen', 0)">Parlimen</th><th onclick="resort('parlimen', 1)">Bil</th><th style="text-align:right" onclick="resort('parlimen', 2)">Luas</th></tr></thead>
+        <tbody id="parlimen-table-body"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -209,6 +270,18 @@
   <div id="map"></div>
   <div id="info-panel">
     <div id="placeholder" style="text-align:center; color:#ccc; margin-top:50px">&#128205; klik titik pada peta untuk butiran</div>
+    
+    <!-- PAPARAN TERHAD UNTUK PELAWAT AWAM -->
+    <div id="public-restricted-box" style="display:none">
+      <div class="restricted-card">
+        <div style="font-size:28px;">&#128274;</div>
+        <h4>Paparan Terhad (Pelawat Awam)</h4>
+        <p>Perincian maklumat ladang dan koordinat disembunyikan untuk akses awam. Sila masukkan kod akses rasmi untuk melihat butiran penuh.</p>
+        <button onclick="openLoginModal()" style="padding:10px 16px; background:var(--primary); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px;">Masukkan Kod Akses</button>
+      </div>
+    </div>
+
+    <!-- PAPARAN BUTIRAN PENUH UNTUK AKSES RASMI -->
     <div id="detail-box" style="display:none">
       <h3 id="d-nama" style="color:var(--primary); margin:0"></h3>
       <span id="d-akua-tag" style="padding:2px 8px; color:white; font-size:11px; border-radius:4px; display:inline-block; margin-top:5px;"></span>
@@ -227,7 +300,7 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
 <script>
-  // --- MASUKKAN URL GOOGLE APPS SCRIPT WEB APP ANDA DI SINI ---
+  // --- URL GOOGLE APPS SCRIPT WEB APP ---
   const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyuDWlL09BHmDINHbJbp66nQxq4qxHNz83L6E-Owou5JsyPWc_hUSJzqTjxMbpBZGMk9Q/exec"; 
 
   // CONFIG & STATE LAJUR BAHARU (32 Lajur - Indeks 0-based)
@@ -241,6 +314,7 @@
     SISTEM: 15,    // NAMA_SISTEM_TERNAKAN
     SPESIES: 17,   // NAMA_SPESIS
     LUAS: 24,      // LUAS_KESELURUHAN
+    UNIT: 26,      // BIL_UNIT_KESELURUHAN
     PARLIMEN: 30 
   };
   
@@ -250,10 +324,18 @@
   const MY_CENTER = [4.2105, 101.9758], MY_ZOOM = 6;
   var map, clusterGroup, singleGroup, boundaryLayer, pulseMarker;
   var rawData = [], headers = [], checkedSpecies = [], geojsonData = null;
+  var currentUserScope = "PUBLIC";
   var currentAkuaStats = {}, currentNegeriStats = {}, currentDaerahStats = {}, currentParlimenStats = {}, currentSistemStats = {};
   var sortStates = { akua: { col: 1, asc: false }, negeri: { col: 1, asc: false }, daerah: { col: 1, asc: false }, parlimen: { col: 1, asc: false }, sistem: { col: 1, asc: false } };
 
-  function bypassLogin() { document.getElementById('pass-input').value = ""; startApp(); }
+  function openLoginModal() {
+    document.getElementById('login-overlay').style.display = 'flex';
+  }
+
+  function bypassLogin() { 
+    document.getElementById('pass-input').value = ""; 
+    startApp(); 
+  }
 
   // FUNGSI API FETCH UNTUK GITHUB PAGES
   function startApp() {
@@ -278,10 +360,29 @@
         geojsonData = response.geo;
         const dataRows = response.payload;
         const profile = response.profile;
+        
+        currentUserScope = (profile.scope || "PUBLIC").toUpperCase();
         document.getElementById('user-email').innerText = profile.user;
-        document.getElementById('user-scope').innerText = profile.scope;
+        document.getElementById('user-scope').innerText = currentUserScope;
+        
         headers = dataRows[0];
         rawData = dataRows.slice(1);
+        
+        // Kosongkan dropdown lama jika pengguna menukar kod akses
+        document.getElementById('filterNegeri').innerHTML = '<option value="">Semua</option>';
+        document.getElementById('filterDaerah').innerHTML = '<option value="">Semua Daerah</option>';
+        document.getElementById('filterAkua').innerHTML = '<option value="">Semua</option>';
+        document.getElementById('filterSistem').innerHTML = '<option value="">Semua</option>';
+        document.getElementById('filterNama').value = "";
+        checkedSpecies = [];
+        document.querySelector('.ms-selected').innerText = "Pilih Spesies...";
+        
+        // Reset panel maklumat kanan
+        if (pulseMarker) pulseMarker.clearLayers();
+        document.getElementById('detail-box').style.display = 'none';
+        document.getElementById('public-restricted-box').style.display = 'none';
+        document.getElementById('placeholder').style.display = 'block';
+
         populateDropdowns();
         extractSpecies();
         updateNamaDatalist();
@@ -390,14 +491,23 @@
   function updateUI() {
     clusterGroup.clearLayers(); singleGroup.clearLayers(); map.removeLayer(clusterGroup); map.removeLayer(singleGroup);
     const fN = document.getElementById('filterNegeri').value.trim(), fD = document.getElementById('filterDaerah').value.trim(), fA = document.getElementById('filterAkua').value.trim(), fS = document.getElementById('filterSistem').value.trim(), fNameRaw = document.getElementById('filterNama').value.trim().toLowerCase(), useCluster = document.getElementById('toggleCluster').checked;
-    let markers = [], bounds = [], totalLuas = 0, akuaStats = {}, negeriStats = {}, daerahStats = {}, parlimenStats = {}, sistemStats = {}, exactMatchRow = null;
+    let markers = [], bounds = [], totalLuas = 0, totalUnit = 0, akuaStats = {}, negeriStats = {}, daerahStats = {}, parlimenStats = {}, sistemStats = {}, exactMatchRow = null;
     let uAkuas = new Set(), uSistems = new Set();
     
     const len = rawData.length;
     for (let i = 0; i < len; i++) {
       const r = rawData[i], lat = fixCoord(r[COL.LAT]), lng = fixCoord(r[COL.LNG]);
       if (lat === null || lng === null || !isWithinMalaysia(lat, lng)) continue;
-      const negeri = String(r[COL.NEGERI] || "").trim(), daerah = String(r[COL.DAERAH] || "").trim(), parlimen = String(r[COL.PARLIMEN] || "").trim(), akua = String(r[COL.AKUA] || "").trim(), sistem = String(r[COL.SISTEM] || "").trim(), namaFull = String(r[COL.NAMA] || "").trim(), luas = parseFloat(String(r[COL.LUAS] || "0").replace(/,/g, '')) || 0;
+      
+      const negeri = String(r[COL.NEGERI] || "").trim();
+      const daerah = String(r[COL.DAERAH] || "").trim();
+      const parlimen = String(r[COL.PARLIMEN] || "").trim();
+      const akua = String(r[COL.AKUA] || "").trim();
+      const sistem = String(r[COL.SISTEM] || "").trim();
+      const namaFull = String(r[COL.NAMA] || "").trim();
+      const luas = parseFloat(String(r[COL.LUAS] || "0").replace(/,/g, '')) || 0;
+      const unit = parseFloat(String(r[COL.UNIT] || "0").replace(/,/g, '')) || 0;
+      
       const matchSpesies = checkedSpecies.length === 0 || checkedSpecies.some(s => String(r[COL.SPESIES]).includes(s));
       
       if ((fN === "" || negeri === fN) && (fD === "" || daerah === fD) && (fA === "" || akua === fA) && (fS === "" || sistem === fS) && matchSpesies) {
@@ -405,7 +515,9 @@
           const color = colorMap[akua] || colorMap['Default'];
           const m = L.circleMarker([lat, lng], { radius: 6, fillColor: color, color: "#fff", weight: 1, fillOpacity: 0.8 });
           m.on('click', () => showInfo(r, color, lat, lng));
-          markers.push(m); bounds.push([lat, lng]); totalLuas += luas;
+          markers.push(m); bounds.push([lat, lng]); 
+          totalLuas += luas;
+          totalUnit += unit;
           
           if(akua) uAkuas.add(akua); 
           if(sistem) uSistems.add(sistem);
@@ -415,7 +527,10 @@
           if(!daerahStats[daerah]) daerahStats[daerah] = { count: 0, luas: 0 }; daerahStats[daerah].count++; daerahStats[daerah].luas += luas;
           if(!parlimenStats[parlimen]) parlimenStats[parlimen] = { count: 0, luas: 0 }; parlimenStats[parlimen].count++; parlimenStats[parlimen].luas += luas;
           if(!sistemStats[sistem]) sistemStats[sistem] = { count: 0, luas: 0 }; sistemStats[sistem].count++; sistemStats[sistem].luas += luas;
-          if (namaFull.toLowerCase() === fNameRaw && fNameRaw !== "") exactMatchRow = { row: r, color: color, lat: lat, lng: lng };
+          
+          if (currentUserScope !== "PUBLIC" && namaFull.toLowerCase() === fNameRaw && fNameRaw !== "") {
+            exactMatchRow = { row: r, color: color, lat: lat, lng: lng };
+          }
         }
       }
     }
@@ -423,6 +538,7 @@
     
     document.getElementById('sum-total').innerText = markers.length.toLocaleString();
     document.getElementById('sum-luas-total').innerText = (totalLuas).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('sum-unit-total').innerText = Math.round(totalUnit).toLocaleString();
     document.getElementById('sum-akua-count').innerText = uAkuas.size.toLocaleString(); 
     document.getElementById('sum-sistem-count').innerText = uSistems.size.toLocaleString();
 
@@ -464,12 +580,35 @@
   function resort(type, colIndex) { if (sortStates[type].col === colIndex) sortStates[type].asc = !sortStates[type].asc; else { sortStates[type].col = colIndex; sortStates[type].asc = true; } renderAllTables(); }
 
   function showInfo(r, color, lat, lng) {
-    window.selectedCoord = {lat, lng}; document.getElementById('placeholder').style.display = 'none'; document.getElementById('detail-box').style.display = 'block';
-    document.getElementById('d-nama').innerText = r[COL.NAMA]; const tag = document.getElementById('d-akua-tag'); tag.innerText = r[COL.AKUA] || '-'; tag.style.backgroundColor = color;
-    let h = ""; headers.forEach((lbl, idx) => { if(r[idx] !== undefined && r[idx] !== "" && idx < 32) h += `<tr><th>${lbl}</th><td>${r[idx]}</td></tr>`; }); document.getElementById('d-table').innerHTML = h;
+    window.selectedCoord = {lat, lng}; 
+    document.getElementById('placeholder').style.display = 'none'; 
+    
+    // Papar penanda denyutan merah pada titik peta yang diklik
     pulseMarker.clearLayers();
     const pIcon = L.divIcon({ className: 'pulse-container', html: '<div class="pulse-highlight"></div>', iconSize: [12, 12], iconAnchor: [6, 6] });
     L.marker([lat, lng], { icon: pIcon, interactive: false }).addTo(pulseMarker);
+
+    // SEMBUNYIKAN PERINCIAN LADANG JIKA PENGGUNA AWAM (PUBLIC)
+    if (currentUserScope === "PUBLIC") {
+      document.getElementById('detail-box').style.display = 'none';
+      document.getElementById('public-restricted-box').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('public-restricted-box').style.display = 'none';
+    document.getElementById('detail-box').style.display = 'block';
+    document.getElementById('d-nama').innerText = r[COL.NAMA]; 
+    const tag = document.getElementById('d-akua-tag'); 
+    tag.innerText = r[COL.AKUA] || '-'; 
+    tag.style.backgroundColor = color;
+    
+    let h = ""; 
+    headers.forEach((lbl, idx) => { 
+      if(r[idx] !== undefined && r[idx] !== "" && idx < 32) {
+        h += `<tr><th>${lbl}</th><td>${r[idx]}</td></tr>`; 
+      }
+    }); 
+    document.getElementById('d-table').innerHTML = h;
   }
 
   function resetFilters() {
@@ -477,7 +616,9 @@
     document.getElementById('filterNegeri').value = ""; document.getElementById('filterDaerah').innerHTML = '<option value="">Semua Daerah</option>'; 
     document.getElementById('filterAkua').value = ""; document.getElementById('filterSistem').value = ""; document.getElementById('filterNama').value = "";
     checkedSpecies = []; document.querySelector('.ms-selected').innerText = "Pilih Spesies..."; document.querySelectorAll('.ms-option input').forEach(c => c.checked = false);
-    document.getElementById('detail-box').style.display = 'none'; document.getElementById('placeholder').style.display = 'block';
+    document.getElementById('detail-box').style.display = 'none'; 
+    document.getElementById('public-restricted-box').style.display = 'none';
+    document.getElementById('placeholder').style.display = 'block';
     boundaryLayer.clearLayers(); updateUI();
   }
 
