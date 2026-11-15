@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AkuaGIS</title>
+  <link rel="icon" type="image/png" href="https://github.com/usopdrahman/logbookdof/raw/1f784168ab48de031417c6fcb8677322765604eb/DOF%20LOGO.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
@@ -63,7 +64,7 @@
 
     .ms-container { position: relative; width: 155px; }
     .ms-selected { cursor: pointer; display: flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 25px; position: relative; }
-    .ms-selected::after { content: '\25BC'; font-size: 8px; position: absolute; right: 10px; color: #aaa; }
+    .ms-selected::after { content: '▼'; font-size: 8px; position: absolute; right: 10px; color: #aaa; }
     .ms-dropdown { display: none; position: absolute; top: 100%; left: 0; width: 230px; background: white; border: 1px solid #ced4da; border-radius: 4px; z-index: 4000; max-height: 280px; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
     #msOptionsList { display: flex; flex-direction: column; }
     .ms-option { padding: 8px 12px; font-size: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; border-bottom: 1px solid #f5f5f5; justify-content: flex-start; }
@@ -174,4 +175,313 @@
 
   <div class="table-wrapper scrollable-table">
     <span class="stat-label">Parlimen</span>
-    <table class="summary-table" id="tablePar
+    <table class="summary-table" id="tableParlimen">
+      <thead><tr><th onclick="resort('parlimen', 0)">Parlimen</th><th onclick="resort('parlimen', 1)">Bil</th><th style="text-align:right" onclick="resort('parlimen', 2)">Luas</th></tr></thead>
+      <tbody id="parlimen-table-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="controls">
+  <div class="input-group"><label>Negeri</label><select id="filterNegeri" onchange="onNegeriChange()"><option value="">Semua</option></select></div>
+  <div class="input-group"><label>Daerah</label><select id="filterDaerah" onchange="onDaerahChange()"><option value="">Semua Daerah</option></select></div>
+  <div class="input-group"><label>Jenis Akua</label><select id="filterAkua" onchange="onAquaChange()"><option value="">Semua</option></select></div>
+  <div class="input-group"><label>Sistem Ternakan</label><select id="filterSistem" onchange="onSistemChange()"><option value="">Semua</option></select></div>
+  
+  <div class="input-group">
+    <label>Spesies</label>
+    <div class="ms-container" id="msSpecies">
+      <div class="ms-selected" onclick="toggleMs()">Pilih Spesies...</div>
+      <div class="ms-dropdown" id="msDropdown">
+        <input type="text" placeholder="cari..." oninput="filterMsOptions(this)" style="width:92%; margin:8px auto; display:block; height:28px; padding:0 8px;">
+        <div id="msOptionsList"></div>
+      </div>
+    </div>
+  </div>
+  <div class="input-group">
+    <label>Nama Penternak</label>
+    <input list="listNama" id="filterNama" placeholder="cari nama..." oninput="debouncedUpdateUI()">
+    <datalist id="listNama"></datalist>
+  </div>
+</div>
+
+<div id="main-container">
+  <div id="map"></div>
+  <div id="info-panel">
+    <div id="placeholder" style="text-align:center; color:#ccc; margin-top:50px">📍 klik titik pada peta untuk butiran</div>
+    <div id="detail-box" style="display:none">
+      <h3 id="d-nama" style="color:var(--primary); margin:0"></h3>
+      <span id="d-akua-tag" style="padding:2px 8px; color:white; font-size:11px; border-radius:4px; display:inline-block; margin-top:5px;"></span>
+      <table id="d-table" class="summary-table" style="margin-top:15px; width:100%"></table>
+      <br>
+      <button onclick="openEarth()" style="width:100%; padding:12px; background:var(--dark); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">🌍 Lihat di Google Earth</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <b>AkuaGIS</b> &copy; 2026 Jabatan Perikanan Malaysia (DOF). Hak Cipta Terpelihara.
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<script>
+  // --- MASUKKAN URL GOOGLE APPS SCRIPT WEB APP ANDA DI SINI ---
+  const WEB_APP_URL = "LETAK_URL_GOOGLE_APPS_SCRIPT_ANDA_DI_SINI"; 
+
+  // CONFIG & STATE LAJUR BAHARU (32 Lajur - Indeks 0-based)
+  const COL = { 
+    DAERAH: 0, 
+    NEGERI: 1, 
+    NAMA: 2, 
+    LAT: 6, 
+    LNG: 7, 
+    AKUA: 13,      // JENIS_AKUA
+    SISTEM: 15,    // NAMA_SISTEM_TERNAKAN
+    SPESIES: 17,   // NAMA_SPESIS
+    LUAS: 24,      // LUAS_KESELURUHAN
+    PARLIMEN: 30 
+  };
+  
+  const colorMap = { 'AIR TAWAR': '#27ae60', 'AIR PAYAU': '#2980b9', 'HIASAN AIR TAWAR': '#f39c12', 'HATCHERY AP KERAJAAN': '#8e44ad', 'HATCHERY AP SWASTA': '#e74c3c', 'HATCHERY AT KERAJAAN': '#1abc9c', 'HATCHERY AT SWASTA': '#f25e7e', 'Default': '#fa0ae6' };
+  const stateColors = { 'Selangor': '#ff0000', 'Johor': '#000066', 'Kedah': '#ff0000', 'Kelantan': '#ff0000', 'Melaka': '#ff0000', 'Negeri Sembilan': '#ffff00', 'Pahang': '#000000', 'Perak': '#ffcc00', 'Perlis': '#ffff00', 'Pulau Pinang': '#0099ff', 'Sabah': '#66ccff', 'Sarawak': '#ff0000', 'Terengganu': '#000000', 'Kuala Lumpur': '#0000ff', 'Putrajaya': '#ffcc00', 'Labuan': '#ff0000' };
+
+  const MY_CENTER = [4.2105, 101.9758], MY_ZOOM = 6;
+  var map, clusterGroup, singleGroup, boundaryLayer, pulseMarker;
+  var rawData = [], headers = [], checkedSpecies = [], geojsonData = null;
+  var currentAkuaStats = {}, currentNegeriStats = {}, currentDaerahStats = {}, currentParlimenStats = {}, currentSistemStats = {};
+  var sortStates = { akua: { col: 1, asc: false }, negeri: { col: 1, asc: false }, daerah: { col: 1, asc: false }, parlimen: { col: 1, asc: false }, sistem: { col: 1, asc: false } };
+
+  function bypassLogin() { document.getElementById('pass-input').value = ""; startApp(); }
+
+  // FUNGSI API FETCH UNTUK GITHUB PAGES
+  function startApp() {
+    const code = document.getElementById('pass-input').value.trim();
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('loader').style.display = 'flex';
+
+    if (WEB_APP_URL === "LETAK_URL_GOOGLE_APPS_SCRIPT_ANDA_DI_SINI") {
+      alert("Sila masukkan Web App URL Google Apps Script yang sah ke dalam kod HTML (pemboleh ubah WEB_APP_URL).");
+      document.getElementById('loader').style.display = 'none';
+      return;
+    }
+
+    const fetchUrl = `${WEB_APP_URL}?key=${encodeURIComponent(code)}`;
+
+    fetch(fetchUrl)
+      .then(response => response.json())
+      .then(response => {
+        geojsonData = response.geo;
+        const dataRows = response.payload;
+        const profile = response.profile;
+        document.getElementById('user-email').innerText = profile.user;
+        document.getElementById('user-scope').innerText = profile.scope;
+        headers = dataRows[0];
+        rawData = dataRows.slice(1);
+        populateDropdowns();
+        extractSpecies();
+        updateNamaDatalist();
+        updateUI();
+        document.getElementById('loader').style.display = 'none';
+        setTimeout(() => { map.invalidateSize(); updateUI(); }, 400);
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+        alert('Gagal memuat turun data. Sila pastikan URL Google Apps Script betul dan mempunyai kebenaran akses.');
+        document.getElementById('loader').style.display = 'none';
+      });
+  }
+
+  function init() { setupMap(); }
+
+  function setupMap() {
+    map = L.map('map', { preferCanvas: true }).setView(MY_CENTER, MY_ZOOM);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    var legend = L.control({position: 'bottomleft'});
+    legend.onAdd = function () {
+      var div = L.DomUtil.create('div', 'map-legend');
+      div.innerHTML = '<strong>Warna Jenis Akua</strong><br>';
+      for (var key in colorMap) { if(key !== 'Default') div.innerHTML += `<div class="legend-item"><i class="dot-ref" style="background:${colorMap[key]}"></i>${key}</div>`; }
+      return div;
+    };
+    legend.addTo(map);
+    clusterGroup = L.markerClusterGroup({ chunkedLoading: true, disableClusteringAtZoom: 16 });
+    singleGroup = L.layerGroup();
+    boundaryLayer = L.geoJSON(null, { style: { color: "#1a73e8", weight: 3, fillOpacity: 0.1, dashArray: '5, 5' } }).addTo(map);
+    pulseMarker = L.layerGroup().addTo(map);
+  }
+
+  function isWithinMalaysia(lat, lng) { return lat > 0 && lat < 10 && lng > 98 && lng < 121; }
+  function fixCoord(val) { let n = parseFloat(val); if (isNaN(n) || n === 0) return null; return Math.abs(n) > 1000 ? n / 1000000 : n; }
+
+  function populateDropdowns() {
+    const getUnique = (idx) => [...new Set(rawData.map(r => String(r[idx] || "").trim()).filter(Boolean))].sort();
+    getUnique(COL.NEGERI).forEach(n => document.getElementById('filterNegeri').add(new Option(n, n)));
+    getUnique(COL.AKUA).forEach(a => document.getElementById('filterAkua').add(new Option(a, a)));
+    getUnique(COL.SISTEM).forEach(s => document.getElementById('filterSistem').add(new Option(s, s)));
+  }
+
+  function extractSpecies() {
+    let sSet = new Set();
+    rawData.forEach(r => { let val = String(r[COL.SPESIES] || ""); if(val) val.split(',').forEach(s => sSet.add(s.trim())); });
+    let html = ""; [...sSet].sort().forEach(s => { html += `<div class="ms-option" onclick="event.stopPropagation();"><input type="checkbox" id="sp_${s}" value="${s}" onchange="toggleSpeciesValue(this)"><label for="sp_${s}">${s}</label></div>`; });
+    document.getElementById('msOptionsList').innerHTML = html;
+  }
+
+  function toggleMs() { const dd = document.getElementById('msDropdown'); dd.style.display = dd.style.display === "block" ? "none" : "block"; }
+
+  function toggleSpeciesValue(cb) {
+    if(cb.checked) checkedSpecies.push(cb.value); else checkedSpecies = checkedSpecies.filter(s => s !== cb.value);
+    document.querySelector('.ms-selected').innerText = checkedSpecies.length > 0 ? checkedSpecies.join(', ') : "Pilih Spesies...";
+    updateNamaDatalist(); updateUI();
+  }
+
+  function onNegeriChange() {
+    const fN = document.getElementById('filterNegeri').value;
+    const dSel = document.getElementById('filterDaerah'); dSel.innerHTML = '<option value="">Semua Daerah</option>';
+    if(fN) {
+      const daerahs = [...new Set(rawData.filter(r => String(r[COL.NEGERI]).trim() === fN).map(r => String(r[COL.DAERAH] || "").trim()).filter(Boolean))].sort();
+      daerahs.forEach(d => dSel.add(new Option(d, d)));
+    }
+    updateBoundary(); updateNamaDatalist(); updateUI();
+  }
+
+  function onDaerahChange() { updateBoundary(); updateNamaDatalist(); updateUI(); }
+  function onAquaChange() { updateNamaDatalist(); updateUI(); }
+  function onSistemChange() { updateNamaDatalist(); updateUI(); }
+
+  function updateBoundary() {
+    if (!geojsonData || !boundaryLayer) return;
+    boundaryLayer.clearLayers();
+    const fN = document.getElementById('filterNegeri').value.trim().toUpperCase();
+    if (!fN) return;
+    const matchedFeatures = geojsonData.features.filter(f => {
+      const nameInGeo = (f.properties.name || f.properties.State || f.properties.NAME_1 || "").toUpperCase();
+      return nameInGeo.includes(fN) || fN.includes(nameInGeo);
+    });
+    if (matchedFeatures.length > 0) {
+      boundaryLayer.addData({ type: "FeatureCollection", features: matchedFeatures });
+      const colorKey = Object.keys(stateColors).find(k => k.toUpperCase().includes(fN));
+      boundaryLayer.setStyle({ color: stateColors[colorKey] || "#1a73e8", fillOpacity: 0.1, weight: 4 });
+    }
+  }
+
+  function updateNamaDatalist() {
+    const fN = document.getElementById('filterNegeri').value, fD = document.getElementById('filterDaerah').value, fA = document.getElementById('filterAkua').value, fS = document.getElementById('filterSistem').value, list = document.getElementById('listNama');
+    let names = [];
+    const len = rawData.length;
+    for (let i = 0; i < len; i++) {
+      const r = rawData[i];
+      const matchSpesies = checkedSpecies.length === 0 || checkedSpecies.some(s => String(r[COL.SPESIES]).includes(s));
+      if ((fN === "" || r[COL.NEGERI] === fN) && (fD === "" || r[COL.DAERAH] === fD) && (fA === "" || r[COL.AKUA] === fA) && (fS === "" || r[COL.SISTEM] === fS) && matchSpesies) { if(r[COL.NAMA]) names.push(r[COL.NAMA]); }
+    }
+    const frag = document.createDocumentFragment();
+    [...new Set(names)].sort().forEach(n => { const opt = document.createElement('option'); opt.value = n; frag.appendChild(opt); });
+    list.innerHTML = ""; list.appendChild(frag);
+  }
+
+  let uiTimeout;
+  function debouncedUpdateUI() { clearTimeout(uiTimeout); uiTimeout = setTimeout(updateUI, 300); }
+
+  function updateUI() {
+    clusterGroup.clearLayers(); singleGroup.clearLayers(); map.removeLayer(clusterGroup); map.removeLayer(singleGroup);
+    const fN = document.getElementById('filterNegeri').value.trim(), fD = document.getElementById('filterDaerah').value.trim(), fA = document.getElementById('filterAkua').value.trim(), fS = document.getElementById('filterSistem').value.trim(), fNameRaw = document.getElementById('filterNama').value.trim().toLowerCase(), useCluster = document.getElementById('toggleCluster').checked;
+    let markers = [], bounds = [], totalLuas = 0, akuaStats = {}, negeriStats = {}, daerahStats = {}, parlimenStats = {}, sistemStats = {}, exactMatchRow = null;
+    let uAkuas = new Set(), uSistems = new Set();
+    
+    const len = rawData.length;
+    for (let i = 0; i < len; i++) {
+      const r = rawData[i], lat = fixCoord(r[COL.LAT]), lng = fixCoord(r[COL.LNG]);
+      if (lat === null || lng === null || !isWithinMalaysia(lat, lng)) continue;
+      const negeri = String(r[COL.NEGERI] || "").trim(), daerah = String(r[COL.DAERAH] || "").trim(), parlimen = String(r[COL.PARLIMEN] || "").trim(), akua = String(r[COL.AKUA] || "").trim(), sistem = String(r[COL.SISTEM] || "").trim(), namaFull = String(r[COL.NAMA] || "").trim(), luas = parseFloat(r[COL.LUAS]) || 0;
+      const matchSpesies = checkedSpecies.length === 0 || checkedSpecies.some(s => String(r[COL.SPESIES]).includes(s));
+      
+      if ((fN === "" || negeri === fN) && (fD === "" || daerah === fD) && (fA === "" || akua === fA) && (fS === "" || sistem === fS) && matchSpesies) {
+        if (fNameRaw === "" || namaFull.toLowerCase().includes(fNameRaw)) {
+          const color = colorMap[akua] || colorMap['Default'];
+          const m = L.circleMarker([lat, lng], { radius: 6, fillColor: color, color: "#fff", weight: 1, fillOpacity: 0.8 });
+          m.on('click', () => showInfo(r, color, lat, lng));
+          markers.push(m); bounds.push([lat, lng]); totalLuas += luas;
+          
+          if(akua) uAkuas.add(akua); 
+          if(sistem) uSistems.add(sistem);
+
+          if(!akuaStats[akua]) akuaStats[akua] = { count: 0, luas: 0 }; akuaStats[akua].count++; akuaStats[akua].luas += luas;
+          if(!negeriStats[negeri]) negeriStats[negeri] = { count: 0, luas: 0 }; negeriStats[negeri].count++; negeriStats[negeri].luas += luas;
+          if(!daerahStats[daerah]) daerahStats[daerah] = { count: 0, luas: 0 }; daerahStats[daerah].count++; daerahStats[daerah].luas += luas;
+          if(!parlimenStats[parlimen]) parlimenStats[parlimen] = { count: 0, luas: 0 }; parlimenStats[parlimen].count++; parlimenStats[parlimen].luas += luas;
+          if(!sistemStats[sistem]) sistemStats[sistem] = { count: 0, luas: 0 }; sistemStats[sistem].count++; sistemStats[sistem].luas += luas;
+          if (namaFull.toLowerCase() === fNameRaw && fNameRaw !== "") exactMatchRow = { row: r, color: color, lat: lat, lng: lng };
+        }
+      }
+    }
+    if(useCluster) { clusterGroup.addLayers(markers); map.addLayer(clusterGroup); } else { singleGroup.addLayer(L.layerGroup(markers)); map.addLayer(singleGroup); }
+    
+    document.getElementById('sum-total').innerText = markers.length.toLocaleString();
+    document.getElementById('sum-luas-total').innerText = (totalLuas).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('sum-akua-count').innerText = uAkuas.size.toLocaleString(); 
+    document.getElementById('sum-sistem-count').innerText = uSistems.size.toLocaleString();
+
+    currentAkuaStats = akuaStats; currentNegeriStats = negeriStats; currentDaerahStats = daerahStats; currentParlimenStats = parlimenStats; currentSistemStats = sistemStats;
+    renderAllTables();
+    
+    if (exactMatchRow) { showInfo(exactMatchRow.row, exactMatchRow.color, exactMatchRow.lat, exactMatchRow.lng); map.setView([exactMatchRow.lat, exactMatchRow.lng], 16); } 
+    else if (fD !== "" && markers.length > 0) { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 }); }
+    else if (fN !== "" && boundaryLayer.getLayers().length > 0) { map.fitBounds(boundaryLayer.getBounds(), { padding: [30, 30] }); } 
+    else if (bounds.length > 0) { map.fitBounds(bounds, { padding: [50, 50] }); } 
+    else { map.setView(MY_CENTER, MY_ZOOM); }
+  }
+
+  function renderAllTables() { requestAnimationFrame(() => { renderSingleTable(currentAkuaStats, 'akua-table-body', colorMap, sortStates.akua); renderSingleTable(currentNegeriStats, 'negeri-table-body', stateColors, sortStates.negeri); renderSingleTable(currentDaerahStats, 'daerah-table-body', {}, sortStates.daerah); renderSingleTable(currentParlimenStats, 'parlimen-table-body', {}, sortStates.parlimen); renderSingleTable(currentSistemStats, 'sistem-table-body', {}, sortStates.sistem); }); }
+  
+  function renderSingleTable(stats, bodyId, colorRef, sortState) {
+    const body = document.getElementById(bodyId); 
+    let keys = Object.keys(stats).filter(k => k !== "" && k !== "undefined");
+    
+    keys.sort((a, b) => { 
+      let valA, valB; 
+      if (sortState.col === 0) { valA = a; valB = b; } 
+      else if (sortState.col === 1) { valA = stats[a].count; valB = stats[b].count; } 
+      else { valA = stats[a].luas; valB = stats[b].luas; } 
+      
+      if (valA < valB) return sortState.asc ? -1 : 1; 
+      if (valA > valB) return sortState.asc ? 1 : -1; 
+      return 0; 
+    });
+
+    let html = ""; 
+    keys.forEach(k => { 
+      const c = colorRef[k] || '#ddd'; 
+      html += `<tr><td class="row-indicator" style="border-left-color:${c}">${k}</td><td>${stats[k].count.toLocaleString()}</td><td style="text-align:right">${(stats[k].luas).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td></tr>`; 
+    });
+    body.innerHTML = html;
+  }
+
+  function resort(type, colIndex) { if (sortStates[type].col === colIndex) sortStates[type].asc = !sortStates[type].asc; else { sortStates[type].col = colIndex; sortStates[type].asc = true; } renderAllTables(); }
+
+  function showInfo(r, color, lat, lng) {
+    window.selectedCoord = {lat, lng}; document.getElementById('placeholder').style.display = 'none'; document.getElementById('detail-box').style.display = 'block';
+    document.getElementById('d-nama').innerText = r[COL.NAMA]; const tag = document.getElementById('d-akua-tag'); tag.innerText = r[COL.AKUA] || '-'; tag.style.backgroundColor = color;
+    let h = ""; headers.forEach((lbl, idx) => { if(r[idx] !== undefined && r[idx] !== "" && idx < 32) h += `<tr><th>${lbl}</th><td>${r[idx]}</td></tr>`; }); document.getElementById('d-table').innerHTML = h;
+    pulseMarker.clearLayers();
+    const pIcon = L.divIcon({ className: 'pulse-container', html: '<div class="pulse-highlight"></div>', iconSize: [12, 12], iconAnchor: [6, 6] });
+    L.marker([lat, lng], { icon: pIcon, interactive: false }).addTo(pulseMarker);
+  }
+
+  function resetFilters() {
+    if(pulseMarker) pulseMarker.clearLayers();
+    document.getElementById('filterNegeri').value = ""; document.getElementById('filterDaerah').innerHTML = '<option value="">Semua Daerah</option>'; 
+    document.getElementById('filterAkua').value = ""; document.getElementById('filterSistem').value = ""; document.getElementById('filterNama').value = "";
+    checkedSpecies = []; document.querySelector('.ms-selected').innerText = "Pilih Spesies..."; document.querySelectorAll('.ms-option input').forEach(c => c.checked = false);
+    document.getElementById('detail-box').style.display = 'none'; document.getElementById('placeholder').style.display = 'block';
+    boundaryLayer.clearLayers(); updateUI();
+  }
+
+  function openEarth() { if(window.selectedCoord) window.open(`https://earth.google.com/web/search/${window.selectedCoord.lat},${window.selectedCoord.lng}`, '_blank'); }
+  function filterMsOptions(input) { const f = input.value.toLowerCase(); document.querySelectorAll('.ms-option').forEach(opt => { opt.style.display = opt.innerText.toLowerCase().includes(f) ? "flex" : "none"; }); }
+  window.onclick = (e) => { const ms = document.getElementById('msSpecies'); if (ms && !ms.contains(e.target)) document.getElementById('msDropdown').style.display = "none"; };
+  window.onload = function() { init(); };
+</script>
+</body>
+</html>
