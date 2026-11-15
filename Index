@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AkuaGIS</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
@@ -124,7 +126,7 @@
     <span style="margin: 0 10px; color: #ccc;">|</span>
     <strong>AKSES:</strong> <span id="user-scope" class="badge-scope">-</span>
   </div>
-  <div style="font-size: 9px; color: #70757a;">v2026.01</div>
+  <div style="font-size: 9px; color: #70757a;">v2026.02</div>
 </div>
 
 <div id="stats-section">
@@ -211,7 +213,7 @@
       <span id="d-akua-tag" style="padding:2px 8px; color:white; font-size:11px; border-radius:4px; display:inline-block; margin-top:5px;"></span>
       <table id="d-table" class="summary-table" style="margin-top:15px; width:100%"></table>
       <br>
-      <button onclick="openEarth()" style="width:100%; padding:12px; background:var(--dark); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">🌏 Lihat di Google Earth</button>
+      <button onclick="openEarth()" style="width:100%; padding:12px; background:var(--dark); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">🌍 Lihat di Google Earth</button>
     </div>
   </div>
 </div>
@@ -224,8 +226,23 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
 <script>
-  // CONFIG & STATE (Tetap stabil)
-  const COL = { DAERAH: 0, NEGERI: 1, NAMA: 2, SPESIES: 9, LUAS: 10, AKUA: 11, SISTEM: 12, PARLIMEN: 13, LAT: 6, LNG: 7 };
+  // --- MASUKKAN URL GOOGLE APPS SCRIPT WEB APP ANDA DI SINI ---
+  const WEB_APP_URL = "LETAK_URL_GOOGLE_APPS_SCRIPT_ANDA_DI_SINI"; 
+
+  // CONFIG & STATE LAJUR BAHARU (32 Lajur - Indeks 0-based)
+  const COL = { 
+    DAERAH: 0, 
+    NEGERI: 1, 
+    NAMA: 2, 
+    LAT: 6, 
+    LNG: 7, 
+    AKUA: 13,      // JENIS_AKUA
+    SISTEM: 15,    // NAMA_SISTEM_TERNAKAN
+    SPESIES: 17,   // NAMA_SPESIS
+    LUAS: 24,      // LUAS_KESELURUHAN (Ubah ke 21 jika guna KELUASAN_LADANG)
+    PARLIMEN: 30 
+  };
+  
   const colorMap = { 'AIR TAWAR': '#27ae60', 'AIR PAYAU': '#2980b9', 'HIASAN AIR TAWAR': '#f39c12', 'HATCHERY AP KERAJAAN': '#8e44ad', 'HATCHERY AP SWASTA': '#e74c3c', 'HATCHERY AT KERAJAAN': '#1abc9c', 'HATCHERY AT SWASTA': '#f25e7e', 'Default': '#fa0ae6' };
   const stateColors = { 'Selangor': '#ff0000', 'Johor': '#000066', 'Kedah': '#ff0000', 'Kelantan': '#ff0000', 'Melaka': '#ff0000', 'Negeri Sembilan': '#ffff00', 'Pahang': '#000000', 'Perak': '#ffcc00', 'Perlis': '#ffff00', 'Pulau Pinang': '#0099ff', 'Sabah': '#66ccff', 'Sarawak': '#ff0000', 'Terengganu': '#000000', 'Kuala Lumpur': '#0000ff', 'Putrajaya': '#ffcc00', 'Labuan': '#ff0000' };
 
@@ -237,27 +254,42 @@
 
   function bypassLogin() { document.getElementById('pass-input').value = ""; startApp(); }
 
+  // FUNGSI API FETCH UNTUK GITHUB PAGES
   function startApp() {
-    const code = document.getElementById('pass-input').value;
+    const code = document.getElementById('pass-input').value.trim();
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('loader').style.display = 'flex';
 
-    google.script.run.withSuccessHandler(function(jsonString) {
-      const response = JSON.parse(jsonString);
-      geojsonData = response.geo;
-      const dataRows = response.payload;
-      const profile = response.profile;
-      document.getElementById('user-email').innerText = profile.user;
-      document.getElementById('user-scope').innerText = profile.scope;
-      headers = dataRows[0];
-      rawData = dataRows.slice(1);
-      populateDropdowns();
-      extractSpecies();
-      updateNamaDatalist();
-      updateUI();
+    if (WEB_APP_URL === "LETAK_URL_GOOGLE_APPS_SCRIPT_ANDA_DI_SINI") {
+      alert("Sila masukkan Web App URL Google Apps Script yang sah ke dalam kod HTML (pemboleh ubah WEB_APP_URL).");
       document.getElementById('loader').style.display = 'none';
-      setTimeout(() => { map.invalidateSize(); updateUI(); }, 400);
-    }).getInitialData(code);
+      return;
+    }
+
+    const fetchUrl = `${WEB_APP_URL}?key=${encodeURIComponent(code)}`;
+
+    fetch(fetchUrl)
+      .then(response => response.json())
+      .then(response => {
+        geojsonData = response.geo;
+        const dataRows = response.payload;
+        const profile = response.profile;
+        document.getElementById('user-email').innerText = profile.user;
+        document.getElementById('user-scope').innerText = profile.scope;
+        headers = dataRows[0];
+        rawData = dataRows.slice(1);
+        populateDropdowns();
+        extractSpecies();
+        updateNamaDatalist();
+        updateUI();
+        document.getElementById('loader').style.display = 'none';
+        setTimeout(() => { map.invalidateSize(); updateUI(); }, 400);
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+        alert('Gagal memuat turun data. Sila pastikan URL Google Apps Script betul dan mempunyai kebenaran akses.');
+        document.getElementById('loader').style.display = 'none';
+      });
   }
 
   function init() { setupMap(); }
@@ -300,7 +332,7 @@
 
   function toggleSpeciesValue(cb) {
     if(cb.checked) checkedSpecies.push(cb.value); else checkedSpecies = checkedSpecies.filter(s => s !== cb.value);
-    document.querySelector('.ms-selected').innerText = checkedSpecies.length > 0 ? checkedSpecies.join(', ') : "Pilih Spesies...";
+    document.querySelector('.ms-selected').innerHTML = checkedSpecies.length > 0 ? checkedSpecies.join(', ') + "::after" : "Pilih Spesies...::after".replace("::after", "");
     updateNamaDatalist(); updateUI();
   }
 
@@ -363,6 +395,7 @@
       if (lat === null || lng === null || !isWithinMalaysia(lat, lng)) continue;
       const negeri = String(r[COL.NEGERI] || "").trim(), daerah = String(r[COL.DAERAH] || "").trim(), parlimen = String(r[COL.PARLIMEN] || "").trim(), akua = String(r[COL.AKUA] || "").trim(), sistem = String(r[COL.SISTEM] || "").trim(), namaFull = String(r[COL.NAMA] || "").trim(), luas = parseFloat(r[COL.LUAS]) || 0;
       const matchSpesies = checkedSpecies.length === 0 || checkedSpecies.some(s => String(r[COL.SPESIES]).includes(s));
+      
       if ((fN === "" || negeri === fN) && (fD === "" || daerah === fD) && (fA === "" || akua === fA) && (fS === "" || sistem === fS) && matchSpesies) {
         if (fNameRaw === "" || namaFull.toLowerCase().includes(fNameRaw)) {
           const color = colorMap[akua] || colorMap['Default'];
@@ -370,8 +403,8 @@
           m.on('click', () => showInfo(r, color, lat, lng));
           markers.push(m); bounds.push([lat, lng]); totalLuas += luas;
           
-          // POPULASI SET UNTUK RINGKASAN CARD (MEMBETULKAN DATA BILANGAN)
-          uAkuas.add(akua); uSistems.add(sistem);
+          if(akua) uAkuas.add(akua); 
+          if(sistem) uSistems.add(sistem);
 
           if(!akuaStats[akua]) akuaStats[akua] = { count: 0, luas: 0 }; akuaStats[akua].count++; akuaStats[akua].luas += luas;
           if(!negeriStats[negeri]) negeriStats[negeri] = { count: 0, luas: 0 }; negeriStats[negeri].count++; negeriStats[negeri].luas += luas;
@@ -384,7 +417,6 @@
     }
     if(useCluster) { clusterGroup.addLayers(markers); map.addLayer(clusterGroup); } else { singleGroup.addLayer(L.layerGroup(markers)); map.addLayer(singleGroup); }
     
-    // KEMASKINI RINGKASAN CARD
     document.getElementById('sum-total').innerText = markers.length.toLocaleString();
     document.getElementById('sum-luas-total').innerText = (totalLuas).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     document.getElementById('sum-akua-count').innerText = uAkuas.size.toLocaleString(); 
@@ -392,6 +424,7 @@
 
     currentAkuaStats = akuaStats; currentNegeriStats = negeriStats; currentDaerahStats = daerahStats; currentParlimenStats = parlimenStats; currentSistemStats = sistemStats;
     renderAllTables();
+    
     if (exactMatchRow) { showInfo(exactMatchRow.row, exactMatchRow.color, exactMatchRow.lat, exactMatchRow.lng); map.setView([exactMatchRow.lat, exactMatchRow.lng], 16); } 
     else if (fD !== "" && markers.length > 0) { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 }); }
     else if (fN !== "" && boundaryLayer.getLayers().length > 0) { map.fitBounds(boundaryLayer.getBounds(), { padding: [30, 30] }); } 
@@ -403,9 +436,8 @@
   
   function renderSingleTable(stats, bodyId, colorRef, sortState) {
     const body = document.getElementById(bodyId); 
-    let keys = Object.keys(stats).filter(k => k !== "");
+    let keys = Object.keys(stats).filter(k => k !== "" && k !== "undefined");
     
-    // LOGIK SORTING YANG DIPERBAIK (UNTUK TEKS DAN NOMBOR)
     keys.sort((a, b) => { 
       let valA, valB; 
       if (sortState.col === 0) { valA = a; valB = b; } 
@@ -427,10 +459,11 @@
 
   function resort(type, colIndex) { if (sortStates[type].col === colIndex) sortStates[type].asc = !sortStates[type].asc; else { sortStates[type].col = colIndex; sortStates[type].asc = true; } renderAllTables(); }
 
+  // Tunjukkan semua 32 lajur (termasuk PARLIMEN dan DUN) apabila pin diklik
   function showInfo(r, color, lat, lng) {
     window.selectedCoord = {lat, lng}; document.getElementById('placeholder').style.display = 'none'; document.getElementById('detail-box').style.display = 'block';
-    document.getElementById('d-nama').innerText = r[COL.NAMA]; const tag = document.getElementById('d-akua-tag'); tag.innerText = r[COL.AKUA]; tag.style.backgroundColor = color;
-    let h = ""; headers.forEach((lbl, idx) => { if(r[idx] !== undefined && r[idx] !== "" && idx < 15) h += `<tr><th>${lbl}</th><td>${r[idx]}</td></tr>`; }); document.getElementById('d-table').innerHTML = h;
+    document.getElementById('d-nama').innerText = r[COL.NAMA]; const tag = document.getElementById('d-akua-tag'); tag.innerText = r[COL.AKUA] || '-'; tag.style.backgroundColor = color;
+    let h = ""; headers.forEach((lbl, idx) => { if(r[idx] !== undefined && r[idx] !== "" && idx < 32) h += `<tr><th>${lbl}</th><td>${r[idx]}</td></tr>`; }); document.getElementById('d-table').innerHTML = h;
     pulseMarker.clearLayers();
     const pIcon = L.divIcon({ className: 'pulse-container', html: '<div class="pulse-highlight"></div>', iconSize: [12, 12], iconAnchor: [6, 6] });
     L.marker([lat, lng], { icon: pIcon, interactive: false }).addTo(pulseMarker);
@@ -440,7 +473,7 @@
     if(pulseMarker) pulseMarker.clearLayers();
     document.getElementById('filterNegeri').value = ""; document.getElementById('filterDaerah').innerHTML = '<option value="">Semua Daerah</option>'; 
     document.getElementById('filterAkua').value = ""; document.getElementById('filterSistem').value = ""; document.getElementById('filterNama').value = "";
-    checkedSpecies = []; document.querySelector('.ms-selected').innerText = "Pilih Spesies..."; document.querySelectorAll('.ms-option input').forEach(c => c.checked = false);
+    checkedSpecies = []; document.querySelector('.ms-selected').innerHTML = "Pilih Spesies..."; document.querySelectorAll('.ms-option input').forEach(c => c.checked = false);
     document.getElementById('detail-box').style.display = 'none'; document.getElementById('placeholder').style.display = 'block';
     boundaryLayer.clearLayers(); updateUI();
   }
