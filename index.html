@@ -93,14 +93,18 @@
     select, input, .ms-selected { padding: 6px 10px; border-radius: 6px; border: 1px solid #ced4da; font-size: 12px; width: 155px; height: 35px; outline: none; box-sizing: border-box; background-color: white; }
     #filterNama { width: 220px; }
 
-    .ms-container { position: relative; width: 155px; }
-    .ms-selected { cursor: pointer; display: flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 25px; position: relative; }
-    .ms-selected::after { content: '\25BC'; font-size: 8px; position: absolute; right: 10px; color: #aaa; }
-    .ms-dropdown { display: none; position: absolute; top: 100%; left: 0; width: 230px; background: white; border: 1px solid #ced4da; border-radius: 4px; z-index: 4000; max-height: 280px; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
-    #msOptionsList { display: flex; flex-direction: column; }
-    .ms-option { padding: 8px 12px; font-size: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; border-bottom: 1px solid #f5f5f5; justify-content: flex-start; }
+   .ms-container { position: relative; width: 155px; }
+    .ms-selected { cursor: pointer; display: block; line-height: 21px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 25px; position: relative; }
+    .ms-selected::after { content: '\25BC'; font-size: 8px; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; }
+    .ms-dropdown { display: none; position: absolute; top: calc(100% + 4px); left: 0; width: 250px; background: white; border: 1px solid #ced4da; border-radius: 8px; z-index: 4000; max-height: 280px; overflow-y: auto; box-shadow: 0 6px 18px rgba(0,0,0,0.14); }
+    #msDropdown input[type="text"] { position: sticky; top: 0; z-index: 2; width: calc(100% - 16px) !important; margin: 8px !important; height: 30px !important; padding: 4px 10px !important; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; background: #f8fafc; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+    #msDropdown input[type="text"]:focus { background: white; border-color: var(--primary); }
+    #msOptionsList { display: flex; flex-direction: column; padding-bottom: 4px; }
+    .ms-option { padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 9px; cursor: pointer; border-bottom: 1px solid #f1f5f9; justify-content: flex-start; text-align: left; }
+    .ms-option:last-child { border-bottom: none; }
     .ms-option:hover { background: #f0f7ff; }
-    .ms-option label { cursor: pointer; text-transform: none; color: #333; font-weight: normal; margin: 0; }
+    .ms-option input[type="checkbox"] { width: 15px !important; height: 15px !important; min-width: 15px; margin: 0; padding: 0; flex-shrink: 0; cursor: pointer; accent-color: var(--primary); }
+    .ms-option label { cursor: pointer; text-transform: none; color: #333; font-weight: normal; margin: 0; line-height: 1.35; flex: 1; }
 
     #main-container { display: flex; flex-direction: row; height: 550px; border-bottom: 1px solid #dee2e6; background: #eee; }
     #map { flex: 3; height: 100%; width: 100%; z-index: 10; }
