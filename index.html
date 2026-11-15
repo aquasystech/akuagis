@@ -254,11 +254,11 @@
 <div id="stats-section">
   <!-- KAD 1: RINGKASAN -->
   <div class="table-wrapper">
-    <span class="stat-label">Ringkasan (Bagi Penternak yang ada koordinat sahaja)</span>
+    <span class="stat-label">Ringkasan</span>
     <div class="global-stats-grid">
       <div class="global-card"><small>Penternak</small><div id="sum-total">0</div></div>
-      <div class="global-card"><small>Luas (ha)</small><div id="sum-luas-total">0.00</div></div>
-      <div class="global-card"><small>Bil. Unit</small><div id="sum-unit-total">0</div></div>
+      <div class="global-card"><small>Luas Efektif (ha)</small><div id="sum-luas-total">0.00</div></div>
+      <div class="global-card"><small>Luas Total (ha)</small><div id="sum-luas-keseluruhan">0.00</div></div>
       <div class="global-card"><small>Jenis Akua</small><div id="sum-akua-count">0</div></div>
       <div class="global-card"><small>Sistem Ternakan</small><div id="sum-sistem-count">0</div></div>
     </div>
@@ -401,11 +401,11 @@
     NAMA: 2, 
     LAT: 6, 
     LNG: 7, 
-    AKUA: 13,      // JENIS_AKUA
-    SISTEM: 15,    // NAMA_SISTEM_TERNAKAN
-    SPESIES: 17,   // NAMA_SPESIS
-    LUAS: 21,      // KELUASAN_LADANG (Lajur V)
-    UNIT: 26,      // BIL_UNIT_KESELURUHAN
+    AKUA: 13,        // JENIS_AKUA
+    SISTEM: 15,      // NAMA_SISTEM_TERNAKAN
+    SPESIES: 17,     // NAMA_SPESIS
+    LUAS: 21,        // KELUASAN_LADANG (Lajur V - Luas Efektif)
+    LUAS_TOTAL: 24,  // LUAS_KESELURUHAN (Lajur Y - Luas Total)
     PARLIMEN: 30 
   };
   
@@ -615,7 +615,7 @@
   function updateUI() {
     clusterGroup.clearLayers(); singleGroup.clearLayers(); map.removeLayer(clusterGroup); map.removeLayer(singleGroup);
     const fN = document.getElementById('filterNegeri').value.trim(), fD = document.getElementById('filterDaerah').value.trim(), fA = document.getElementById('filterAkua').value.trim(), fS = document.getElementById('filterSistem').value.trim(), fNameRaw = document.getElementById('filterNama').value.trim().toLowerCase(), useCluster = document.getElementById('toggleCluster').checked;
-    let markers = [], bounds = [], totalLuas = 0, totalUnit = 0, akuaStats = {}, negeriStats = {}, daerahStats = {}, parlimenStats = {}, sistemStats = {}, exactMatchRow = null;
+    let markers = [], bounds = [], totalLuas = 0, totalLuasKeseluruhan = 0, akuaStats = {}, negeriStats = {}, daerahStats = {}, parlimenStats = {}, sistemStats = {}, exactMatchRow = null;
     let uAkuas = new Set(), uSistems = new Set();
     let coordCoverage = {}, totalRecordsFiltered = 0, totalValidFiltered = 0;
     
@@ -649,13 +649,13 @@
           if (!hasValidCoord) continue;
 
           const luas = parseFloat(String(r[COL.LUAS] || "0").replace(/,/g, '')) || 0;
-          const unit = parseFloat(String(r[COL.UNIT] || "0").replace(/,/g, '')) || 0;
+          const luasTotal = parseFloat(String(r[COL.LUAS_TOTAL] || "0").replace(/,/g, '')) || 0;
           const color = colorMap[akua] || colorMap['Default'];
           const m = L.circleMarker([lat, lng], { radius: 6, fillColor: color, color: "#fff", weight: 1, fillOpacity: 0.8 });
           m.on('click', () => showInfo(r, color, lat, lng));
           markers.push(m); bounds.push([lat, lng]); 
           totalLuas += luas;
-          totalUnit += unit;
+          totalLuasKeseluruhan += luasTotal;
           
           if(akua) uAkuas.add(akua); 
           if(sistem) uSistems.add(sistem);
@@ -676,7 +676,7 @@
     
     document.getElementById('sum-total').innerText = markers.length.toLocaleString();
     document.getElementById('sum-luas-total').innerText = (totalLuas).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    document.getElementById('sum-unit-total').innerText = Math.round(totalUnit).toLocaleString();
+    document.getElementById('sum-luas-keseluruhan').innerText = (totalLuasKeseluruhan).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     document.getElementById('sum-akua-count').innerText = uAkuas.size.toLocaleString(); 
     document.getElementById('sum-sistem-count').innerText = uSistems.size.toLocaleString();
 
