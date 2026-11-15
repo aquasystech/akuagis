@@ -120,7 +120,7 @@
       width: 16px;
       height: 16px;
       border-radius: 50%;
-      background: rgba(26, 115, 232, 0.55);
+      background: rgba(245, 158, 11, 0.6);
       animation: gps-star-pulse 1.8s infinite ease-out;
       z-index: 1;
     }
@@ -608,9 +608,9 @@
         userLocationLayer.clearLayers();
         L.circle([lat, lng], {
           radius: acc,
-          color: '#1a73e8',
-          fillColor: '#1a73e8',
-          fillOpacity: 0.12,
+          color: '#d97706',
+          fillColor: '#f59e0b',
+          fillOpacity: 0.14,
           weight: 1
         }).addTo(userLocationLayer);
 
@@ -618,7 +618,7 @@
           className: 'pulse-container',
           html: `<div class="gps-star-wrapper">
                    <div class="gps-star-ring"></div>
-                   <svg class="gps-star-svg" viewBox="0 0 24 24" fill="#1a73e8" stroke="#ffffff" stroke-width="2" stroke-linejoin="round">
+                   <svg class="gps-star-svg" viewBox="0 0 24 24" fill="#f59e0b" stroke="#ffffff" stroke-width="2" stroke-linejoin="round">
                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                    </svg>
                  </div>`,
