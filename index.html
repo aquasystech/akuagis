@@ -83,6 +83,44 @@
     .summary-table th { text-align: left; padding: 6px; background: #f8f9fa; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #eee; cursor: pointer; }
     .summary-table td { padding: 5px 6px; border-bottom: 1px solid #f1f1f1; }
     .row-indicator { border-left: 4px solid var(--primary); padding-left: 8px !important; }
+    .clickable-row { cursor: pointer; transition: background 0.15s; }
+    .clickable-row:hover { background: #eff6ff; }
+    .active-filter-row { background: #dbeafe !important; font-weight: 700; color: #1e40af; }
+
+    .parlimen-pill { background: #1e40af; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; }
+    .parlimen-pill:hover { background: #1d4ed8; }
+
+    /* BUTANG GPS LOKASI SEMASA PADA PETA */
+    .gps-control-btn {
+      background: white;
+      width: 34px;
+      height: 34px;
+      border-radius: 4px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+      color: #333;
+      transition: 0.2s;
+    }
+    .gps-control-btn:hover { background: #f4f4f4; color: var(--primary); }
+    .gps-control-btn.active { background: var(--primary); color: white; }
+    .gps-user-dot {
+      width: 14px;
+      height: 14px;
+      background: #1a73e8;
+      border: 2.5px solid white;
+      border-radius: 50%;
+      box-shadow: 0 0 0 rgba(26, 115, 232, 0.5);
+      animation: gps-pulse 1.8s infinite;
+    }
+    @keyframes gps-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(26, 115, 232, 0.7); }
+      70% { box-shadow: 0 0 0 18px rgba(26, 115, 232, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(26, 115, 232, 0); }
+    }
 
     .global-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 2px; }
     .global-card { background: #f8fafc; border: 1px solid #edf2f7; padding: 8px 6px; border-radius: 6px; text-align: center; }
@@ -242,11 +280,12 @@
 </header>
 
 <div id="status-bar">
-  <div>
+  <div style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
     <strong>LOG MASUK:</strong> <span id="user-email">Menunggu...</span> 
-    <span style="margin: 0 10px; color: #ccc;">|</span>
+    <span style="margin: 0 8px; color: #ccc;">|</span>
     <strong>AKSES:</strong> <span id="user-scope" class="badge-scope">-</span>
-    <button class="btn-switch-key" onclick="openLoginModal()">Log Keluar</button>
+    <button class="btn-switch-key" onclick="openLoginModal()">Tukar Kod</button>
+    <span id="active-parlimen-badge" style="display:none;"></span>
   </div>
   <div style="font-size: 9px; color: #70757a;">v2026.03</div>
 </div>
@@ -413,7 +452,8 @@
   const stateColors = { 'Selangor': '#ff0000', 'Johor': '#000066', 'Kedah': '#ff0000', 'Kelantan': '#ff0000', 'Melaka': '#ff0000', 'Negeri Sembilan': '#ffff00', 'Pahang': '#000000', 'Perak': '#ffcc00', 'Perlis': '#ffff00', 'Pulau Pinang': '#0099ff', 'Sabah': '#66ccff', 'Sarawak': '#ff0000', 'Terengganu': '#000000', 'Kuala Lumpur': '#0000ff', 'Putrajaya': '#ffcc00', 'Labuan': '#ff0000' };
 
   const MY_CENTER = [4.2105, 101.9758], MY_ZOOM = 6;
-  var map, clusterGroup, singleGroup, boundaryLayer, pulseMarker, coordChartInstance = null;
+  var map, clusterGroup, singleGroup, boundaryLayer, pulseMarker, userLocationLayer, gpsBtnElement = null, coordChartInstance = null;
+  var selectedParlimen = "";
   var rawData = [], headers = [], checkedSpecies = [], geojsonData = null;
   var currentUserScope = "PUBLIC";
   var currentAkuaStats = {}, currentNegeriStats = {}, currentDaerahStats = {}, currentParlimenStats = {}, currentSistemStats = {};
@@ -515,6 +555,69 @@
     singleGroup = L.layerGroup();
     boundaryLayer = L.geoJSON(null, { style: { color: "#1a73e8", weight: 3, fillOpacity: 0.1, dashArray: '5, 5' } }).addTo(map);
     pulseMarker = L.layerGroup().addTo(map);
+    userLocationLayer = L.layerGroup().addTo(map);
+
+    // Tambah butang GPS (Lokasi Saya) di bucu kiri atas bawah butang zoom
+    var gpsControl = L.control({ position: 'topleft' });
+    gpsControl.onAdd = function () {
+      var btn = L.DomUtil.create('button', 'gps-control-btn');
+      btn.type = 'button';
+      btn.title = 'Lokasi Saya (GPS)';
+      btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path><circle cx="12" cy="12" r="8"></circle></svg>';
+      L.DomEvent.disableClickPropagation(btn);
+      btn.onclick = function () { locateUser(); };
+      gpsBtnElement = btn;
+      return btn;
+    };
+    gpsControl.addTo(map);
+  }
+
+  function locateUser() {
+    if (!navigator.geolocation) {
+      alert("Pelayar web anda tidak menyokong fungsi GPS.");
+      return;
+    }
+    if (gpsBtnElement) gpsBtnElement.classList.add('active');
+
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const acc = Math.round(pos.coords.accuracy);
+
+        userLocationLayer.clearLayers();
+        L.circle([lat, lng], {
+          radius: acc,
+          color: '#1a73e8',
+          fillColor: '#1a73e8',
+          fillOpacity: 0.12,
+          weight: 1
+        }).addTo(userLocationLayer);
+
+        const gpsIcon = L.divIcon({
+          className: 'pulse-container',
+          html: '<div class="gps-user-dot"></div>',
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        });
+
+        L.marker([lat, lng], { icon: gpsIcon })
+          .bindPopup(`<b>Lokasi Semasa Anda</b><br>Ketepatan: ±${acc} meter`)
+          .addTo(userLocationLayer)
+          .openPopup();
+
+        map.setView([lat, lng], 15);
+      },
+      function (err) {
+        if (gpsBtnElement) gpsBtnElement.classList.remove('active');
+        if (err.code === 1) {
+          alert("Akses lokasi (GPS) disekat. Sila benarkan kebenaran lokasi pada pelayar web anda.");
+        } else {
+          alert("Tidak dapat mengesan isyarat GPS semasa. Sila pastikan GPS peranti diaktifkan.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   }
 
   function isWithinMalaysia(lat, lng) { return lat > 0 && lat < 10 && lng > 98 && lng < 121; }
@@ -566,6 +669,7 @@
   }
 
   function onNegeriChange() {
+    selectedParlimen = "";
     const fN = document.getElementById('filterNegeri').value;
     const dSel = document.getElementById('filterDaerah'); dSel.innerHTML = '<option value="">Semua Daerah</option>';
     if(fN) {
@@ -575,7 +679,7 @@
     updateSistemDropdown(); updateBoundary(); updateNamaDatalist(); updateUI();
   }
 
-  function onDaerahChange() { updateSistemDropdown(); updateBoundary(); updateNamaDatalist(); updateUI(); }
+  function onDaerahChange() { selectedParlimen = ""; updateSistemDropdown(); updateBoundary(); updateNamaDatalist(); updateUI(); }
   function onAquaChange() { updateSistemDropdown(); updateNamaDatalist(); updateUI(); }
   function onSistemChange() { updateNamaDatalist(); updateUI(); }
 
@@ -602,7 +706,10 @@
     for (let i = 0; i < len; i++) {
       const r = rawData[i];
       const matchSpesies = checkedSpecies.length === 0 || checkedSpecies.some(s => String(r[COL.SPESIES]).includes(s));
-      if ((fN === "" || r[COL.NEGERI] === fN) && (fD === "" || r[COL.DAERAH] === fD) && (fA === "" || r[COL.AKUA] === fA) && (fS === "" || r[COL.SISTEM] === fS) && matchSpesies) { if(r[COL.NAMA]) names.push(r[COL.NAMA]); }
+      const matchParlimen = selectedParlimen === "" || String(r[COL.PARLIMEN] || "").trim() === selectedParlimen;
+      if ((fN === "" || r[COL.NEGERI] === fN) && (fD === "" || r[COL.DAERAH] === fD) && (fA === "" || r[COL.AKUA] === fA) && (fS === "" || r[COL.SISTEM] === fS) && matchSpesies && matchParlimen) {
+        if (r[COL.NAMA] && r[COL.NAMA] !== "[SULIT]") names.push(r[COL.NAMA]);
+      }
     }
     const frag = document.createDocumentFragment();
     [...new Set(names)].sort().forEach(n => { const opt = document.createElement('option'); opt.value = n; frag.appendChild(opt); });
@@ -630,7 +737,7 @@
       const namaFull = String(r[COL.NAMA] || "").trim();
       const matchSpesies = checkedSpecies.length === 0 || checkedSpecies.some(s => String(r[COL.SPESIES]).includes(s));
 
-      if ((fN === "" || negeri === fN) && (fD === "" || daerah === fD) && (fA === "" || akua === fA) && (fS === "" || sistem === fS) && matchSpesies) {
+      if ((fN === "" || negeri === fN) && (fD === "" || daerah === fD) && (fA === "" || akua === fA) && (fS === "" || sistem === fS) && (selectedParlimen === "" || parlimen === selectedParlimen) && matchSpesies) {
         if (fNameRaw === "" || namaFull.toLowerCase().includes(fNameRaw)) {
           const lat = fixCoord(r[COL.LAT]), lng = fixCoord(r[COL.LNG]);
           const hasValidCoord = (lat !== null && lng !== null && isWithinMalaysia(lat, lng));
@@ -679,6 +786,15 @@
     document.getElementById('sum-luas-keseluruhan').innerText = (totalLuasKeseluruhan).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     document.getElementById('sum-akua-count').innerText = uAkuas.size.toLocaleString(); 
     document.getElementById('sum-sistem-count').innerText = uSistems.size.toLocaleString();
+
+    const pBadge = document.getElementById('active-parlimen-badge');
+    if (selectedParlimen !== "") {
+      pBadge.style.display = 'inline-block';
+      pBadge.innerHTML = `<span class="parlimen-pill" onclick="clearParlimenFilter()" title="Klik untuk padam tapisan Parlimen">PARLIMEN: ${selectedParlimen} &#10005;</span>`;
+    } else {
+      pBadge.style.display = 'none';
+      pBadge.innerHTML = '';
+    }
 
     currentAkuaStats = akuaStats; currentNegeriStats = negeriStats; currentDaerahStats = daerahStats; currentParlimenStats = parlimenStats; currentSistemStats = sistemStats;
     renderAllTables();
@@ -780,9 +896,17 @@
     });
   }
 
-  function renderAllTables() { requestAnimationFrame(() => { renderSingleTable(currentAkuaStats, 'akua-table-body', colorMap, sortStates.akua); renderSingleTable(currentNegeriStats, 'negeri-table-body', stateColors, sortStates.negeri); renderSingleTable(currentDaerahStats, 'daerah-table-body', {}, sortStates.daerah); renderSingleTable(currentParlimenStats, 'parlimen-table-body', {}, sortStates.parlimen); renderSingleTable(currentSistemStats, 'sistem-table-body', {}, sortStates.sistem); }); }
+  function renderAllTables() {
+    requestAnimationFrame(() => {
+      renderSingleTable(currentAkuaStats, 'akua-table-body', colorMap, sortStates.akua, 'akua', document.getElementById('filterAkua').value.trim());
+      renderSingleTable(currentNegeriStats, 'negeri-table-body', stateColors, sortStates.negeri, 'negeri', document.getElementById('filterNegeri').value.trim());
+      renderSingleTable(currentDaerahStats, 'daerah-table-body', {}, sortStates.daerah, 'daerah', document.getElementById('filterDaerah').value.trim());
+      renderSingleTable(currentParlimenStats, 'parlimen-table-body', {}, sortStates.parlimen, 'parlimen', selectedParlimen);
+      renderSingleTable(currentSistemStats, 'sistem-table-body', {}, sortStates.sistem, 'sistem', document.getElementById('filterSistem').value.trim());
+    });
+  }
   
-  function renderSingleTable(stats, bodyId, colorRef, sortState) {
+  function renderSingleTable(stats, bodyId, colorRef, sortState, filterType, activeValue) {
     const body = document.getElementById(bodyId); 
     let keys = Object.keys(stats).filter(k => k !== "" && k !== "undefined");
     
@@ -799,10 +923,58 @@
 
     let html = ""; 
     keys.forEach(k => { 
-      const c = colorRef[k] || '#ddd'; 
-      html += `<tr><td class="row-indicator" style="border-left-color:${c}">${k}</td><td>${stats[k].count.toLocaleString()}</td><td style="text-align:right">${(stats[k].luas).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td></tr>`; 
+      const c = colorRef[k] || '#ddd';
+      const isActive = (activeValue !== "" && activeValue === k);
+      const safeVal = k.replace(/"/g, '&quot;');
+      html += `<tr class="clickable-row ${isActive ? 'active-filter-row' : ''}" data-type="${filterType}" data-val="${safeVal}" onclick="handleTableRowClick(this)"><td class="row-indicator" style="border-left-color:${c}">${k}</td><td>${stats[k].count.toLocaleString()}</td><td style="text-align:right">${(stats[k].luas).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td></tr>`; 
     });
     body.innerHTML = html;
+  }
+
+  function handleTableRowClick(trEl) {
+    const type = trEl.dataset.type;
+    const val = trEl.dataset.val;
+
+    if (type === 'negeri') {
+      const sel = document.getElementById('filterNegeri');
+      sel.value = (sel.value === val) ? "" : val;
+      onNegeriChange();
+    } else if (type === 'daerah') {
+      const dSel = document.getElementById('filterDaerah');
+      if (dSel.value === val) {
+        dSel.value = "";
+        onDaerahChange();
+      } else {
+        const nSel = document.getElementById('filterNegeri');
+        if (nSel.value === "") {
+          const foundRow = rawData.find(r => String(r[COL.DAERAH] || "").trim() === val && String(r[COL.NEGERI] || "").trim() !== "");
+          if (foundRow) {
+            nSel.value = String(foundRow[COL.NEGERI]).trim();
+            onNegeriChange();
+          }
+        }
+        dSel.value = val;
+        onDaerahChange();
+      }
+    } else if (type === 'akua') {
+      const sel = document.getElementById('filterAkua');
+      sel.value = (sel.value === val) ? "" : val;
+      onAquaChange();
+    } else if (type === 'sistem') {
+      const sel = document.getElementById('filterSistem');
+      sel.value = (sel.value === val) ? "" : val;
+      onSistemChange();
+    } else if (type === 'parlimen') {
+      selectedParlimen = (selectedParlimen === val) ? "" : val;
+      updateNamaDatalist();
+      updateUI();
+    }
+  }
+
+  function clearParlimenFilter() {
+    selectedParlimen = "";
+    updateNamaDatalist();
+    updateUI();
   }
 
   function resort(type, colIndex) { if (sortStates[type].col === colIndex) sortStates[type].asc = !sortStates[type].asc; else { sortStates[type].col = colIndex; sortStates[type].asc = true; } renderAllTables(); }
@@ -841,6 +1013,9 @@
 
   function resetFilters() {
     if(pulseMarker) pulseMarker.clearLayers();
+    if(userLocationLayer) userLocationLayer.clearLayers();
+    if(gpsBtnElement) gpsBtnElement.classList.remove('active');
+    selectedParlimen = "";
     document.getElementById('filterNegeri').value = ""; document.getElementById('filterDaerah').innerHTML = '<option value="">Semua Daerah</option>'; 
     document.getElementById('filterAkua').value = ""; document.getElementById('filterSistem').value = ""; document.getElementById('filterNama').value = "";
     updateSistemDropdown();
