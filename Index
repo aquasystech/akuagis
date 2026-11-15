@@ -332,7 +332,7 @@
 
   function toggleSpeciesValue(cb) {
     if(cb.checked) checkedSpecies.push(cb.value); else checkedSpecies = checkedSpecies.filter(s => s !== cb.value);
-    document.querySelector('.ms-selected').innerHTML = checkedSpecies.length > 0 ? checkedSpecies.join(', ') + "::after" : "Pilih Spesies...::after".replace("::after", "");
+    document.querySelector('.ms-selected').innerText = checkedSpecies.length > 0 ? checkedSpecies.join(', ') : "Pilih Spesies...";
     updateNamaDatalist(); updateUI();
   }
 
