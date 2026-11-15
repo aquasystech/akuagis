@@ -111,8 +111,55 @@
     .restricted-card p { color: #5f6368; font-size: 12px; line-height: 1.5; margin-bottom: 15px; }
 
     .map-legend { background: white; padding: 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2); font-size: 11px; line-height: 18px; }
+    .legend-title { font-weight: bold; display: block; margin-bottom: 4px; }
+    .legend-list { display: flex; flex-direction: column; gap: 2px; }
     .legend-item { display: flex; align-items: center; gap: 8px; }
-    .dot-ref { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot-ref { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+    /* GAYA MELINTANG SATU BARIS UNTUK PAPARAN TELEFON PINTAR */
+    @media (max-width: 768px) {
+      .leaflet-bottom.leaflet-left {
+        left: 8px;
+        right: 8px;
+        bottom: 18px;
+        max-width: calc(100% - 16px);
+      }
+      .map-legend {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 10px;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x;
+        border-radius: 8px;
+        margin: 0 !important;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .map-legend::-webkit-scrollbar { height: 3px; }
+      .map-legend::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+      .legend-title {
+        margin-bottom: 0;
+        padding-right: 8px;
+        border-right: 1px solid #ddd;
+        font-size: 10px;
+        color: #555;
+        flex-shrink: 0;
+      }
+      .legend-list {
+        flex-direction: row;
+        gap: 12px;
+        align-items: center;
+      }
+      .legend-item {
+        gap: 5px;
+        font-size: 10px;
+        flex-shrink: 0;
+      }
+      .dot-ref { width: 8px; height: 8px; }
+    }
 
     footer { background: var(--dark); color: #888; padding: 8px; text-align: center; font-size: 11px; border-top: 1px solid #333; margin-top: auto; }
 
@@ -405,8 +452,18 @@
     var legend = L.control({position: 'bottomleft'});
     legend.onAdd = function () {
       var div = L.DomUtil.create('div', 'map-legend');
-      div.innerHTML = '<strong>Warna Jenis Akua</strong><br>';
-      for (var key in colorMap) { if(key !== 'Default') div.innerHTML += `<div class="legend-item"><i class="dot-ref" style="background:${colorMap[key]}"></i>${key}</div>`; }
+      L.DomEvent.disableClickPropagation(div);
+      L.DomEvent.disableScrollPropagation(div);
+      div.addEventListener('touchstart', function(e) { e.stopPropagation(); }, { passive: true });
+      div.addEventListener('touchmove', function(e) { e.stopPropagation(); }, { passive: true });
+
+      let itemsHtml = '';
+      for (var key in colorMap) { 
+        if(key !== 'Default') {
+          itemsHtml += `<div class="legend-item"><i class="dot-ref" style="background:${colorMap[key]}"></i>${key}</div>`; 
+        }
+      }
+      div.innerHTML = `<span class="legend-title">Jenis Akua</span><div class="legend-list">${itemsHtml}</div>`;
       return div;
     };
     legend.addTo(map);
