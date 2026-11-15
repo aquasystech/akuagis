@@ -64,7 +64,7 @@
 
     .ms-container { position: relative; width: 155px; }
     .ms-selected { cursor: pointer; display: flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 25px; position: relative; }
-    .ms-selected::after { content: '▼'; font-size: 8px; position: absolute; right: 10px; color: #aaa; }
+    .ms-selected::after { content: '\25BC'; font-size: 8px; position: absolute; right: 10px; color: #aaa; }
     .ms-dropdown { display: none; position: absolute; top: 100%; left: 0; width: 230px; background: white; border: 1px solid #ced4da; border-radius: 4px; z-index: 4000; max-height: 280px; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
     #msOptionsList { display: flex; flex-direction: column; }
     .ms-option { padding: 8px 12px; font-size: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; border-bottom: 1px solid #f5f5f5; justify-content: flex-start; }
@@ -208,13 +208,13 @@
 <div id="main-container">
   <div id="map"></div>
   <div id="info-panel">
-    <div id="placeholder" style="text-align:center; color:#ccc; margin-top:50px">📍 klik titik pada peta untuk butiran</div>
+    <div id="placeholder" style="text-align:center; color:#ccc; margin-top:50px">&#128205; klik titik pada peta untuk butiran</div>
     <div id="detail-box" style="display:none">
       <h3 id="d-nama" style="color:var(--primary); margin:0"></h3>
       <span id="d-akua-tag" style="padding:2px 8px; color:white; font-size:11px; border-radius:4px; display:inline-block; margin-top:5px;"></span>
       <table id="d-table" class="summary-table" style="margin-top:15px; width:100%"></table>
       <br>
-      <button onclick="openEarth()" style="width:100%; padding:12px; background:var(--dark); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">🌍 Lihat di Google Earth</button>
+      <button onclick="openEarth()" style="width:100%; padding:12px; background:var(--dark); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">&#127757; Lihat di Google Earth</button>
     </div>
   </div>
 </div>
@@ -261,7 +261,7 @@
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('loader').style.display = 'flex';
 
-    if (WEB_APP_URL === "https://script.google.com/macros/s/AKfycbyuDWlL09BHmDINHbJbp66nQxq4qxHNz83L6E-Owou5JsyPWc_hUSJzqTjxMbpBZGMk9Q/exec") {
+    if (!WEB_APP_URL || WEB_APP_URL.includes("LETAK_URL")) {
       alert("Sila masukkan Web App URL Google Apps Script yang sah ke dalam kod HTML (pemboleh ubah WEB_APP_URL).");
       document.getElementById('loader').style.display = 'none';
       return;
@@ -272,6 +272,9 @@
     fetch(fetchUrl)
       .then(response => response.json())
       .then(response => {
+        if (response.error) {
+          throw new Error(response.error);
+        }
         geojsonData = response.geo;
         const dataRows = response.payload;
         const profile = response.profile;
@@ -288,7 +291,7 @@
       })
       .catch(error => {
         console.error('Error fetching data:', error);
-        alert('Gagal memuat turun data. Sila pastikan URL Google Apps Script betul dan mempunyai kebenaran akses.');
+        alert('Gagal memuat turun data: ' + error.message);
         document.getElementById('loader').style.display = 'none';
       });
   }
@@ -394,7 +397,7 @@
     for (let i = 0; i < len; i++) {
       const r = rawData[i], lat = fixCoord(r[COL.LAT]), lng = fixCoord(r[COL.LNG]);
       if (lat === null || lng === null || !isWithinMalaysia(lat, lng)) continue;
-      const negeri = String(r[COL.NEGERI] || "").trim(), daerah = String(r[COL.DAERAH] || "").trim(), parlimen = String(r[COL.PARLIMEN] || "").trim(), akua = String(r[COL.AKUA] || "").trim(), sistem = String(r[COL.SISTEM] || "").trim(), namaFull = String(r[COL.NAMA] || "").trim(), luas = parseFloat(r[COL.LUAS]) || 0;
+      const negeri = String(r[COL.NEGERI] || "").trim(), daerah = String(r[COL.DAERAH] || "").trim(), parlimen = String(r[COL.PARLIMEN] || "").trim(), akua = String(r[COL.AKUA] || "").trim(), sistem = String(r[COL.SISTEM] || "").trim(), namaFull = String(r[COL.NAMA] || "").trim(), luas = parseFloat(String(r[COL.LUAS] || "0").replace(/,/g, '')) || 0;
       const matchSpesies = checkedSpecies.length === 0 || checkedSpecies.some(s => String(r[COL.SPESIES]).includes(s));
       
       if ((fN === "" || negeri === fN) && (fD === "" || daerah === fD) && (fA === "" || akua === fA) && (fS === "" || sistem === fS) && matchSpesies) {
