@@ -59,6 +59,9 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.04); 
       display: flex;
       flex-direction: column;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
     }
     .scrollable-table { 
       max-height: 155px; 
@@ -86,10 +89,13 @@
     .global-card small { font-size: 10px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px; }
     .global-card div { font-size: 17px; font-weight: 800; color: var(--primary); }
 
-    .chart-full-width { grid-column: 1 / -1; }
-    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px; }
+    .chart-full-width { grid-column: 1 / -1; overflow: hidden; }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
     .chart-header .stat-label { margin-bottom: 0; }
     .chart-badge { font-size: 11px; font-weight: 700; color: #1967d2; background: #e8f0fe; padding: 3px 10px; border-radius: 5px; }
+    .chart-scroll-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+    .chart-scroll-wrapper::-webkit-scrollbar { height: 5px; }
+    .chart-scroll-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .chart-container { position: relative; height: 210px; width: 100%; }
 
     #controls { background: white; padding: 10px 20px; display: flex; gap: 12px; border-bottom: 1px solid #dee2e6; flex-wrap: wrap; align-items: flex-end; justify-content: flex-start; position: sticky; top: 55px; z-index: 2500; }
@@ -319,8 +325,10 @@
       <span class="stat-label">Peratus Penternak Mempunyai Koordinat Mengikut Negeri</span>
       <span id="coord-overall-badge" class="chart-badge">Keseluruhan: 0% (0 / 0)</span>
     </div>
-    <div class="chart-container">
-      <canvas id="coordChart"></canvas>
+    <div class="chart-scroll-wrapper">
+      <div class="chart-container">
+        <canvas id="coordChart"></canvas>
+      </div>
     </div>
   </div>
 </div>
@@ -703,6 +711,13 @@
     const dataPct = sortedStates.map(s => Number(s.pct.toFixed(1)));
     const bgColors = sortedStates.map(s => s.pct >= 80 ? '#27ae60' : (s.pct >= 50 ? '#1a73e8' : '#e67e22'));
 
+    const chartContainer = document.querySelector('.chart-container');
+    if (window.innerWidth <= 768 && labels.length > 5) {
+      chartContainer.style.width = (labels.length * 56) + 'px';
+    } else {
+      chartContainer.style.width = '100%';
+    }
+
     const ctx = document.getElementById('coordChart').getContext('2d');
     if (coordChartInstance) coordChartInstance.destroy();
 
@@ -755,8 +770,8 @@
             ticks: { callback: val => val + '%', font: { size: 10 } },
             grid: { color: '#f1f5f9' }
           },
-          x: {
-            ticks: { font: { size: 10, weight: '600' } },
+         x: {
+            ticks: { autoSkip: false, maxRotation: 35, minRotation: 0, font: { size: 10, weight: '600' } },
             grid: { display: false }
           }
         }
