@@ -378,10 +378,10 @@
     </div>
   </div>
 
-  <!-- KAD 7: CARTA PERATUS KOORDINAT MENGIKUT NEGERI -->
+  <!-- KAD 7: CARTA PERATUS KOORDINAT MENGIKUT NEGERI / DAERAH -->
   <div class="table-wrapper chart-full-width">
     <div class="chart-header">
-      <span class="stat-label">Peratus Penternak Mempunyai Koordinat Mengikut Negeri</span>
+      <span id="coord-chart-title" class="stat-label">Peratus Penternak Mempunyai Koordinat Mengikut Negeri</span>
       <span id="coord-overall-badge" class="chart-badge">Keseluruhan: 0% (0 / 0)</span>
     </div>
     <div class="chart-scroll-wrapper">
@@ -767,13 +767,14 @@
           const lat = fixCoord(r[COL.LAT]), lng = fixCoord(r[COL.LNG]);
           const hasValidCoord = (lat !== null && lng !== null && isWithinMalaysia(lat, lng));
 
-          // Rekod liputan koordinat mengikut negeri (sebelum tapis koordinat kosong)
-          if (negeri !== "") {
-            if (!coordCoverage[negeri]) coordCoverage[negeri] = { total: 0, valid: 0 };
-            coordCoverage[negeri].total++;
+          // Rekod liputan koordinat mengikut daerah jika negeri dipilih, atau mengikut negeri jika semua
+          const groupKey = (fN !== "") ? (daerah || "TIADA DAERAH") : negeri;
+          if (groupKey !== "") {
+            if (!coordCoverage[groupKey]) coordCoverage[groupKey] = { total: 0, valid: 0 };
+            coordCoverage[groupKey].total++;
             totalRecordsFiltered++;
             if (hasValidCoord) {
-              coordCoverage[negeri].valid++;
+              coordCoverage[groupKey].valid++;
               totalValidFiltered++;
             }
           }
@@ -823,7 +824,7 @@
 
     currentAkuaStats = akuaStats; currentNegeriStats = negeriStats; currentDaerahStats = daerahStats; currentParlimenStats = parlimenStats; currentSistemStats = sistemStats;
     renderAllTables();
-    renderCoordChart(coordCoverage, totalValidFiltered, totalRecordsFiltered);
+    renderCoordChart(coordCoverage, totalValidFiltered, totalRecordsFiltered, fN);
     
     if (exactMatchRow) { showInfo(exactMatchRow.row, exactMatchRow.color, exactMatchRow.lat, exactMatchRow.lng); map.setView([exactMatchRow.lat, exactMatchRow.lng], 16); } 
     else if (fD !== "" && markers.length > 0) { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 }); }
@@ -832,28 +833,35 @@
     else { map.setView(MY_CENTER, MY_ZOOM); }
   }
 
-  function renderCoordChart(coverage, totalValid, totalAll) {
+  function renderCoordChart(coverage, totalValid, totalAll, selectedNegeri) {
+    const titleEl = document.getElementById('coord-chart-title');
+    if (titleEl) {
+      titleEl.innerText = selectedNegeri
+        ? `Peratus Penternak Mempunyai Koordinat Mengikut Daerah (${selectedNegeri})`
+        : `Peratus Penternak Mempunyai Koordinat Mengikut Negeri`;
+    }
+
     const overallPct = totalAll > 0 ? ((totalValid / totalAll) * 100).toFixed(1) : "0.0";
     document.getElementById('coord-overall-badge').innerText = 
       `Keseluruhan: ${overallPct}% (${totalValid.toLocaleString()} / ${totalAll.toLocaleString()} penternak)`;
 
     if (typeof Chart === 'undefined') return;
 
-    const sortedStates = Object.keys(coverage)
+    const sortedItems = Object.keys(coverage)
       .map(n => ({
-        negeri: n,
+        label: n,
         valid: coverage[n].valid,
         total: coverage[n].total,
         pct: coverage[n].total > 0 ? (coverage[n].valid / coverage[n].total) * 100 : 0
       }))
       .sort((a, b) => b.pct - a.pct || b.total - a.total);
 
-    const labels = sortedStates.map(s => s.negeri);
-    const dataPct = sortedStates.map(s => Number(s.pct.toFixed(1)));
-    const bgColors = sortedStates.map(s => s.pct >= 80 ? '#27ae60' : (s.pct >= 50 ? '#1a73e8' : '#e67e22'));
+    const labels = sortedItems.map(s => s.label);
+    const dataPct = sortedItems.map(s => Number(s.pct.toFixed(1)));
+    const bgColors = sortedItems.map(s => s.pct >= 80 ? '#27ae60' : (s.pct >= 50 ? '#1a73e8' : '#e67e22'));
 
     const chartContainer = document.querySelector('.chart-container');
-    if (window.innerWidth <= 768 && labels.length > 5) {
+    if ((window.innerWidth <= 768 && labels.length > 5) || labels.length > 18) {
       chartContainer.style.width = (labels.length * 56) + 'px';
     } else {
       chartContainer.style.width = '100%';
@@ -898,7 +906,7 @@
           tooltip: {
             callbacks: {
               label: function(context) {
-                const item = sortedStates[context.dataIndex];
+                const item = sortedItems[context.dataIndex];
                 return ` ${item.pct.toFixed(1)}% (${item.valid.toLocaleString()} / ${item.total.toLocaleString()} rekod)`;
               }
             }
